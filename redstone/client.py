@@ -12,12 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import base64
+import io
+import logging
+import re
 import urllib.parse
+import zipfile
 
 import requests
 import requests.auth
 
 from redstone import auth
+
+
+LOG = logging.getLogger(__name__)
 
 
 class TokenAuth(requests.auth.AuthBase):
@@ -136,6 +144,67 @@ class IKS(BaseClient):
         if resp.status_code != 204:
             raise Exception("error getting workers: code=%d body=%r" % (resp.status_code, resp.text))
 
+    def get_cluster_config(self, cluster):
+        """
+        Retrieve a KubeConfig that can be used with kubectl to
+        interact with the given IKS cluster.
+
+        :returns: base64 encoded file data; can be decode and written to file,
+        or used with the python kubernetes client to interact in the same process
+        """
+        output_format = "yaml"
+
+        # NOTE(mrodden): no idea why this one API needs the refresh token,
+        # but it certainly gives an HTTP 400 when you don't have it
+        # this is a pretty hacky way of getting one, but we shouldn't even
+        # need it either so... idk. /shrug
+
+        # do a get token before, to make sure we get a valid refresh token.
+        _token = self.session.auth._token_manager.get_token()
+        refresh_token = self.session.auth._token_manager._token_info.get('refresh_token')
+
+        # pure yaml output was added sometime after our original code to deal with the zipfile,
+        # leaving both in because maybe its useful for someone to use the zip path still
+        params={}
+        if output_format == "yaml":
+            params["format"] = "yaml"
+
+        path = '{0}/v1/clusters/{1}/config'
+        resp = self.session.get(
+            path.format(self.endpoint_url, cluster),
+            params=params,
+            headers={
+                "X-Region": self.region,
+                "X-Auth-Refresh-Token": refresh_token
+            }
+        )
+
+        resp.raise_for_status()
+
+        if output_format == "yaml":
+            config_yaml = resp.content
+        else:
+            zip_data = io.BytesIO()
+            zip_data.write(resp.content)
+            zip_file = zipfile.ZipFile(zip_data)
+
+            files = zip_file.namelist()
+            for file_name in files:
+                if file_name.endswith('yml'):
+                    kube_yaml = zip_file.read(file_name)
+                elif file_name.endswith('pem'):
+                    ca_data = zip_file.read(file_name)
+
+            ca_b64 = base64.b64encode(ca_data)
+
+            config_yaml = re.sub(
+                b'certificate-authority: .+',
+                b'certificate-authority-data: ' + ca_b64,
+                kube_yaml
+            )
+
+        return base64.b64encode(config_yaml)
+
 
 class ResourceController(BaseClient):
 
@@ -227,7 +296,7 @@ class KeyProtect(BaseClient):
         if not self.service_instance_id:
             raise ValueError("KeyProtect service requires 'service_instance_id' to be set!")
 
-        self.sesion.headers['Bluemix-Instance'] = self.service_instance_id
+        self.session.headers['Bluemix-Instance'] = self.service_instance_id
 
     def endpoint_for_region(self, region):
         return "https://keyprotect.{0}.bluemix.net".format(region)
@@ -235,15 +304,15 @@ class KeyProtect(BaseClient):
     def _validate_resp(self, resp):
 
         def log_resp(resp):
-            resp_str = StringIO.StringIO()
-            print("%s %s" % (resp.status_code, resp.reason), file=resp_str)
+            resp_str = io.StringIO()
+            print(u"%s %s" % (resp.status_code, resp.reason), file=resp_str)
 
             for k, v in resp.headers.items():
                 if k.lower() == 'authorization':
                     v = 'REDACTED'
                 print("%s: %s" % (k, v), file=resp_str)
 
-            print(resp.content, end='', file=resp_str)
+            print(resp.content.decode(), end=u'', file=resp_str)
             return resp_str.getvalue()
 
         try:
@@ -255,8 +324,8 @@ class KeyProtect(BaseClient):
 
     def keys(self):
         resp = self.session.get(
-            "%s/api/v2/keys" % self.endpoint_url,
-            headers=self._headers)
+            "%s/api/v2/keys" % self.endpoint_url
+        )
 
         self._validate_resp(resp)
 
@@ -264,8 +333,8 @@ class KeyProtect(BaseClient):
 
     def get(self, key_id):
         resp = self.session.get(
-            "%s/api/v2/keys/%s" % (self.endpoint_url, key_id),
-            headers=self._headers)
+            "%s/api/v2/keys/%s" % (self.endpoint_url, key_id)
+        )
 
         self._validate_resp(resp)
 
@@ -294,28 +363,28 @@ class KeyProtect(BaseClient):
 
         resp = self.session.post(
             "%s/api/v2/keys" % self.endpoint_url,
-            headers=self._headers,
-            json=data)
+            json=data
+        )
         self._validate_resp(resp)
         return resp.json().get('resources')[0]
 
     def delete(self, key_id):
         resp = self.session.delete(
-            "%s/api/v2/keys/%s" % (self.endpoint_url, key_id),
-            headers=self._headers)
+            "%s/api/v2/keys/%s" % (self.endpoint_url, key_id)
+        )
         self._validate_resp(resp)
 
     def _action(self, key_id, action, jsonable):
         resp = self.session.post(
             "%s/api/v2/keys/%s" % (self.endpoint_url, key_id),
-            headers=self._headers,
             params={"action": action},
-            json=jsonable)
+            json=jsonable
+        )
         self._validate_resp(resp)
         return resp.json()
 
     def wrap(self, key_id, plaintext, aad=None):
-        data = {'plaintext': base64.b64encode(plaintext)}
+        data = {'plaintext': base64.b64encode(plaintext).decode()}
 
         if aad:
             data['aad'] = aad
@@ -329,7 +398,7 @@ class KeyProtect(BaseClient):
             data['aad'] = aad
 
         resp = self._action(key_id, "unwrap", data)
-        return base64.b64decode(resp['plaintext'])
+        return base64.b64decode(resp['plaintext'].encode())
 
 
 class CISAuth(requests.auth.AuthBase):
@@ -368,10 +437,18 @@ class CIS(BaseClient):
     def update_pool(self, pool):
         pool_id = pool.get('id')
 
-        del pool['created_on']
-        del pool['modified_on']
-        del pool['healthy']
-        del pool['id']
+        keys_to_remove = [
+            'created_on',
+            'modified_on',
+            'healthy',
+            'id'
+        ]
+
+        for key in keys_to_remove:
+            try:
+                del pool[key]
+            except KeyError:
+                pass
 
         path = "{0}/v1/{1}/load_balancers/pools/{2}"
         resp = self.session.put(
