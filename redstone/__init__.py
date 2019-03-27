@@ -15,6 +15,7 @@
 import os
 
 from redstone import client
+from redstone import auth
 
 # free to set/override if user wants
 DEFAULT_SESSION = None
@@ -25,17 +26,21 @@ class Session(object):
     def __init__(self, region=None, iam_api_key=None):
         self.region = region
         self.iam_api_key = iam_api_key
+        self.credentials = auth.TokenManager(self.iam_api_key)
 
     def service(self, service_name, **kwargs):
         client_cls = getattr(client, service_name, None)
         if not client_cls:
             raise ValueError("No client for service '%s'" % service_name)
 
+        if kwargs.get('iam_api_key'):
+            del kwargs['iam_api_key']
+
         if not kwargs.get('region'):
             kwargs['region'] = self.region
 
-        if not kwargs.get('iam_api_key'):
-            kwargs['iam_api_key'] = self.iam_api_key
+        if not kwargs.get('credentials'):
+            kwargs['credentials'] = self.credentials
 
         return client_cls(**kwargs)
 

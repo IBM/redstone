@@ -30,8 +30,8 @@ LOG = logging.getLogger(__name__)
 
 class TokenAuth(requests.auth.AuthBase):
 
-    def __init__(self, apikey):
-        self._token_manager = auth.TokenManager(apikey)
+    def __init__(self, credentials):
+        self._token_manager = credentials
 
     def __call__(self, req):
         req.headers['Authorization'] = \
@@ -42,11 +42,19 @@ class TokenAuth(requests.auth.AuthBase):
 class BaseClient(object):
 
     def __init__(self, region=None, service_instance_id=None,
-        iam_api_key=None, verify=True, endpoint_url=None):
+                 iam_api_key=None, verify=True, endpoint_url=None,
+                 credentials=None):
 
         self.session = requests.Session()
         self.session.verify = verify
-        self.session.auth = TokenAuth(iam_api_key)
+
+        self.credentials = credentials
+        # respect old path if user builds us directly with API key
+        if iam_api_key:
+            LOG.warn("'iam_api_key' keyword arg is deprecated. use 'credentials' instead.")
+            self.credentials = auth.TokenManager(apikey)
+
+        self.session.auth = TokenAuth(self.credentials)
 
         self.service_instance_id = service_instance_id
         self.region = region
@@ -425,7 +433,7 @@ class KeyProtect(BaseClient):
 class CISAuth(requests.auth.AuthBase):
 
     def __init__(self, apikey):
-        self._token_manager = auth.TokenManager(apikey)
+        self._token_manager = credentials
 
     def __call__(self, req):
         req.headers['x-auth-user-token'] = \
@@ -439,7 +447,7 @@ class CIS(BaseClient):
 
     def __init__(self, *args, **kwargs):
         super(CIS, self).__init__(*args, **kwargs)
-        self.session.auth = CISAuth(apikey=kwargs.get("iam_api_key"))
+        self.session.auth = CISAuth(self.credentials)
         self.safe_crn = urllib.parse.quote(self.service_instance_id, safe="")
 
     def endpoint_for_region(self, region):
