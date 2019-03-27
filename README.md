@@ -2,7 +2,7 @@
 
 Redstone is a Python library for interacting with IBM Cloud services.
 It's goals are to make consuming the many services easier
-and more consistent across the entire cloud.
+and more consistent across the entire set of IBM Cloud services.
 
 The current state is very incomplete, as it is built as a side effect of service testing,
 but there are some common service clients that many people
