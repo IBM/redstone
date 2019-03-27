@@ -13,7 +13,7 @@ Contributions in the form of feedback, patches, or bugs are appreciated.
 
 # sample usage
 
-Using the default session to get a KeyProtect client:
+Using the default session to get a CIS (Cloud Internet Services) client:
 
 ``` {.sourceCode python}
 >>> import redstone
