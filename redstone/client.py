@@ -1,4 +1,4 @@
-# Copyright 2018 Mathew Odden <mathewrodden@gmail.com>
+# Copyright 2019 Mathew Odden <mathewrodden@gmail.com>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -61,7 +61,7 @@ class BaseClient(object):
 
 class IKS(BaseClient):
 
-    name = "iks"
+    names = ["iks"]
 
     def endpoint_for_region(self, region):
         return "https://containers.bluemix.net"
@@ -206,48 +206,78 @@ class IKS(BaseClient):
         return base64.b64encode(config_yaml)
 
 
+# FIXME(mrodden): currently this thing is hardcode to create KeyProtect instances only,
+# because i built all of this just for testing the keyprotect service...
 class ResourceController(BaseClient):
+    """
+    API Docs:
+      - https://console.bluemix.net/apidocs/resource-manager
+      - https://console.bluemix.net/apidocs/resource-controller
+    """
 
-    name = "rc"
+    names = ["rc"]
 
     def endpoint_for_region(self, region):
         return "https://resource-controller.bluemix.net"
 
-    def create_instance(self, name, region=None):
-        """Create an service instance.
+    def get_default_resource_group(self):
+        return next(
+            filter(
+                lambda x: x.get("name") == "default",
+                self.resource_groups().get("resources", [])),
+            None
+        )
+
+    def resource_groups(self):
+        if "bluemix" in self.endpoint_url:
+            netloc = self.endpoint_url.replace("controller", "manager")
+        else:
+            netloc = self.endpoint_url
+
+        # apparently it doesn't complain if we drop query params,
+        # didn't want to have to look up the account ID anyway, so +2
+        resp = self.session.get(
+            "{0}/v1/resource_groups".format(netloc),
+        )
+
+        if resp.status_code != 200:
+            raise Exception("Failed to get resource groups: url=%r code=%d body=%r" % (
+                resp.request.url, resp.status_code, resp.text))
+
+        return resp.json()
+
+    def create_instance(self, name, region=None, resource_group=None):
+        """Create/provision a service instance.
 
         :returns: tuple of (service_GUID, service_CRN) if successful
         :raises: Exception if there is an error
         """
 
-        # original request used to reverse engineer this for reference
-        """
-        POST /v1/resource_instances HTTP/1.1
-        Host: resource-controller.bluemix.net
-        Accept: application/json
-        Accept-Language: en-US
-        Accept-Language: en
-        Authorization: [PRIVATE DATA HIDDEN]
-        Content-Type: application/json
-        User-Agent: IBM Cloud CLI 0.12.1 / linux
-
-        {"name":"mrodden-test-deleteme","resource_plan_id":"eedd3585-90c6-4c8f-be3d-062069e99fc3","resource_group_id":"f75c4280361947448dfe59b99dc02368","target_crn":"crn:v1:bluemix:public:globalcatalog::::deployment:eedd3585-90c6-4c8f-be3d-062069e99fc3%3Aus-south"}
-        """
-        # returns 201 on success
-
-        # NOTE(mrodden): these are hardcoded because it requires another lookup to the catalog/IAM,
-        # and we aren't really changing test accounts much
-        resource_group_id = "f75c4280361947448dfe59b99dc02368"
+        if resource_group is None:
+            resource_group_id = self.get_default_resource_group().get("id")
+        else:
+            resource_group_id = resource_group
 
         if not region:
             region = self.region
 
+        # TODO(mroddon): do global catalog lookup of service name and get price plans
+        # this is hardcoded to build KeyProtect instances right now... sorry :/
+        resource_plan_id = "eedd3585-90c6-4c8f-be3d-062069e99fc3"  # keyprotect tiered-pricing ID
+
+        return self._create_instance(name, region, resource_group_id, resource_plan_id)
+
+    def _create_instance(self, name, region, resource_group_id, resource_plan_id):
+
         # seems like the target_crn is the region selector, and its just the price plan ID with the region stuck at the end
-        target_crn = "crn:v1:bluemix:public:globalcatalog::::deployment:eedd3585-90c6-4c8f-be3d-062069e99fc3%3A" + region
+        target_crn = "crn:v1:bluemix:public:globalcatalog::::deployment:{0}%3A{1}".format(
+            resource_plan_id,
+            region
+        )
 
         body = {
             "name": name,
-            "resource_plan_id": "eedd3585-90c6-4c8f-be3d-062069e99fc3",  # tiered-pricing ID
+            "resource_plan_id": resource_plan_id,
             "resource_group_id": resource_group_id,
             "target_crn": target_crn
         }
@@ -262,22 +292,10 @@ class ResourceController(BaseClient):
 
         return resp.json().get("guid"), resp.json().get("id")
 
-
     def delete_instance(self, instance_crn):
+        """Delete/deprovision a service instance identified by the given CRN."""
 
-        """
-        DELETE /v1/resource_instances/crn:v1:bluemix:public:kms:us-south:a%2F7609edf6db359a81a1dde8f44b1a8278:b938bb81-e96e-4613-a262-db1286b1daec:: HTTP/1.1
-        Host: resource-controller.bluemix.net
-        Accept: application/json
-        Accept-Language: en-US
-        Accept-Language: en
-        Authorization: [PRIVATE DATA HIDDEN]
-        Content-Type: application/json
-        User-Agent: IBM Cloud CLI 0.12.1 / linux
-        """
-        # returns 204 No Content on success
-
-        safe_crn = urllib.quote(instance_crn, "")
+        safe_crn = urllib.parse.quote(instance_crn, "")
         resp = self.session.delete(
             "{0}/v1/resource_instances/{1}".format(self.endpoint_url, safe_crn)
         )
@@ -288,7 +306,7 @@ class ResourceController(BaseClient):
 
 class KeyProtect(BaseClient):
 
-    name = "kms"
+    names = ["kms"]
 
     def __init__(self, *args, **kwargs):
         super(KeyProtect, self).__init__(*args, **kwargs)
@@ -359,7 +377,7 @@ class KeyProtect(BaseClient):
         if raw_payload is not None:
             data['resources'][0]['payload'] = raw_payload
         elif payload is not None:
-            data['resources'][0]['payload'] = base64.b64encode(payload)
+            data['resources'][0]['payload'] = base64.b64encode(payload).decode('utf-8')
 
         resp = self.session.post(
             "%s/api/v2/keys" % self.endpoint_url,
@@ -384,7 +402,10 @@ class KeyProtect(BaseClient):
         return resp.json()
 
     def wrap(self, key_id, plaintext, aad=None):
-        data = {'plaintext': base64.b64encode(plaintext).decode()}
+        if plaintext:
+            data = {'plaintext': base64.b64encode(plaintext).decode()}
+        else:
+            data = None
 
         if aad:
             data['aad'] = aad
@@ -413,6 +434,8 @@ class CISAuth(requests.auth.AuthBase):
 
 
 class CIS(BaseClient):
+
+    names = ["cis"]
 
     def __init__(self, *args, **kwargs):
         super(CIS, self).__init__(*args, **kwargs)
