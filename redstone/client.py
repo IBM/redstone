@@ -112,7 +112,7 @@ class IKS(BaseClient):
         # returns 200 OK on success
 
         resp = self.session.get(
-            "{0}/v1/clusters/{1}/workers?showDeleted=false".format(cluster),
+            "{0}/v1/clusters/{1}/workers?showDeleted=false".format(self.endpoint_url, cluster),
             headers={
                 "X-Region": self.region,
                 "Accept": "application/json"
@@ -150,7 +150,38 @@ class IKS(BaseClient):
         )
 
         if resp.status_code != 204:
-            raise Exception("error getting workers: code=%d body=%r" % (resp.status_code, resp.text))
+            raise Exception("error updating workers: code=%d body=%r" % (resp.status_code, resp.text))
+
+    def update_master(self, cluster, version):
+
+        resp = self.session.put(
+            "{0}/v1/clusters/{1}".format(self.endpoint_url, cluster),
+            headers={
+                "X-Region": self.region,
+                "Accept": "application/json"
+            },
+            json={
+                "action": "update",
+                "version": version
+            }
+        )
+
+        if resp.status_code != 204:
+            raise Exception("error updating master: code=%d body=%r" % (resp.status_code, resp.text))
+
+    def get_kube_versions(self):
+        resp = self.session.get(
+            "{0}/v1/kube-versions".format(self.endpoint_url),
+            headers={
+                "X-Region": self.region,
+                "Accept": "application/json"
+            }
+        )
+
+        if resp.status_code != 200:
+            raise Exception("error getting kube-versions: code=%d body=%r" % (resp.status_code, resp.text))
+
+        return resp.json()
 
     def get_cluster_config(self, cluster):
         """
