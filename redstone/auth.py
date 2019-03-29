@@ -21,6 +21,7 @@ import os
 import pprint
 import sys
 import time
+import threading
 
 try:
     from urllib.parse import urlparse, urlencode, urlunsplit
@@ -43,15 +44,17 @@ class TokenManager(object):
         self.api_key = api_key
         self.iam_endpoint = iam_endpoint
         self._token_info = {}
+        self._lock = threading.RLock()
 
     def get_token(self):
-        if (not self._token_info.get('access_token') or
-                self.is_refresh_token_expired()):
-            self._request_token()
-        elif self.is_token_expired():
-            self._refresh_token()
+        with self._lock:
+            if (not self._token_info.get('access_token') or
+                    self.is_refresh_token_expired()):
+                self._request_token()
+            elif self.is_token_expired():
+                self._refresh_token()
 
-        return self._token_info.get('access_token')
+            return self._token_info.get('access_token')
 
     def _request_token(self):
         token_resp = auth(apikey=self.api_key, iam_endpoint=self.iam_endpoint)
