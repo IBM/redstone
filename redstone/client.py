@@ -52,7 +52,7 @@ class BaseClient(object):
         # respect old path if user builds us directly with API key
         if iam_api_key:
             LOG.warn("'iam_api_key' keyword arg is deprecated. use 'credentials' instead.")
-            self.credentials = auth.TokenManager(apikey)
+            self.credentials = auth.TokenManager(iam_api_key)
 
         self.session.auth = TokenAuth(self.credentials)
 
@@ -463,7 +463,7 @@ class KeyProtect(BaseClient):
 
 class CISAuth(requests.auth.AuthBase):
 
-    def __init__(self, apikey):
+    def __init__(self, credentials):
         self._token_manager = credentials
 
     def __call__(self, req):
