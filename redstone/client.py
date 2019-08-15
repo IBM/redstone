@@ -20,7 +20,9 @@ import urllib.parse
 import zipfile
 
 import requests
+import requests.adapters
 import requests.auth
+from requests.packages.urllib3.util.retry import Retry
 
 from redstone import auth
 
@@ -70,6 +72,15 @@ class BaseClient(object):
 class IKS(BaseClient):
 
     names = ["iks"]
+
+    def __init__(self, *args, **kwargs):
+        super(IKS, self).__init__(*args, **kwargs)
+
+        # IKS likes to throw back random 503s at times, but retrying generally works fine
+        # requests default is Retry(0, read=False); see requests/adapters.py
+        retry_conf = Retry(total=5, read=False, backoff_factor=1, status_forcelist=[502, 503])
+        self.session.mount("https://", requests.adapters.HTTPAdapter(max_retries=retry_conf))
+        self.session.mount("http://", requests.adapters.HTTPAdapter(max_retries=retry_conf))
 
     def endpoint_for_region(self, region):
         return "https://containers.bluemix.net"
