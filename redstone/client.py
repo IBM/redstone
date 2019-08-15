@@ -271,12 +271,17 @@ class ResourceController(BaseClient):
         return "https://resource-controller.bluemix.net"
 
     def get_default_resource_group(self):
-        return next(
+        default_rg = next(
             filter(
-                lambda x: x.get("name") == "default",
+                lambda x: x.get("name") in ["Default", "default"],
                 self.resource_groups().get("resources", [])),
             None
         )
+
+        if not default_rg:
+            raise Exception("No default resource group found!")
+
+        return default_rg
 
     def resource_groups(self):
         if "bluemix" in self.endpoint_url:
