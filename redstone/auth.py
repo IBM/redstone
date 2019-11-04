@@ -18,21 +18,11 @@ import base64
 import json
 import logging
 import os
-import pprint
 import sys
 import time
 import threading
 
-try:
-    from urllib.parse import urlparse, urlencode, urlunsplit
-except ImportError:
-    from urlparse import urlparse, urlunsplit
-    from urllib import urlencode
-
-try:
-    import http.client as httplib
-except ImportError:
-    import httplib
+import requests
 
 
 LOG = logging.getLogger(__name__)
@@ -89,52 +79,6 @@ class TokenManager(object):
         return (time.time() >= refresh_expire_time)
 
 
-def request(method, url, body=None, data=None, headers=None):
-    parts = urlparse(url)
-
-    if parts.scheme == 'https':
-        conn = httplib.HTTPSConnection(parts.netloc)
-    else:
-        conn = httplib.HTTPConnection(parts.netloc)
-
-    headers = headers if headers else {}
-
-    if data:
-        headers['Content-Type'] = 'application/x-www-form-urlencoded'
-        body = urlencode(data)
-
-    path = urlunsplit(
-        ('', '', parts.path, parts.query, parts.fragment))
-
-    LOG.debug(get_curl(method, url, headers))
-
-    LOG.info('httplib %s %s' % (method, path))
-    LOG.debug('headers=%s' % pprint.pformat(headers))
-    LOG.debug('body=%r' % body)
-    conn.request(method, path, body=body, headers=headers)
-    resp = conn.getresponse()
-
-    LOG.info('httplib response - %s %s' % (resp.status, resp.reason))
-
-    return resp
-
-
-def get_curl(method, url, headers):
-    header_strs = []
-    for k, v in headers.items():
-        header_strs.append('-H "%s: %s"' % (k, v))
-
-    header_str = ' '.join(header_strs)
-
-    curl_str = 'curl -v -X%(method)s %(headers)s "%(url)s"' % {
-        'method': method,
-        'headers': header_str,
-        'url': url
-    }
-
-    return curl_str
-
-
 def auth(username=None, password=None, apikey=None,
          refresh_token=None, iam_endpoint=None):
     """
@@ -161,7 +105,6 @@ def auth(username=None, password=None, apikey=None,
     # HTTP Headers
     headers = {
         'Authorization': 'Basic Yng6Yng=',
-        'Content-Type': 'application/x-www-form-urlencoded',
         'Accept': 'application/json'
     }
 
@@ -187,15 +130,12 @@ def auth(username=None, password=None, apikey=None,
         raise ValueError(
             "Must specify one of username/password, apikey, or refresh_token!")
 
-    encoded = urlencode(data)
+    resp = requests.post(api_endpoint, data=data, headers=headers)
 
-    resp = request('POST', api_endpoint, body=encoded, headers=headers)
+    if resp.status_code == 200:
+        return resp.json()
 
-    if resp.status == 200:
-        jsonable = json.loads(resp.read().decode('utf-8'))
-        return jsonable
-
-    return resp.read()
+    return resp.text
 
 
 def get_orgs(bearer_token):
@@ -207,8 +147,8 @@ def get_orgs(bearer_token):
         'Accept': 'application/json;charset=utf-8'
     }
 
-    resp = request('GET', api_endpoint, headers=headers)
-    return resp.read()
+    resp = requests.get(api_endpoint, headers=headers)
+    return resp.text
 
 
 def get_spaces(bearer_token, spaces_path):
@@ -220,8 +160,8 @@ def get_spaces(bearer_token, spaces_path):
         'Accept': 'application/json;charset=utf-8'
     }
 
-    resp = request('GET', api_endpoint, headers=headers)
-    return resp.read()
+    resp = request.get(api_endpoint, headers=headers)
+    return resp.text
 
 
 def find_space_and_org(bearer_token, org_name, space_name):
