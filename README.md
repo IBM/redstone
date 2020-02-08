@@ -1,17 +1,19 @@
 # redstone - A Pythonic IBM Cloud SDK
 
 Redstone is a Python library for interacting with IBM Cloud services.
-It's goals are to make consuming the many services easier
+Its main objectives are to make consuming the many services easier
 and more consistent across the entire set of IBM Cloud services.
 
-The current state is very incomplete, as it is built as a side effect of service testing,
-but there are some common service clients that many people
-within IBM would probably find useful, so I have published them here
-in a consumable form.
+The current state is very incomplete, but there are some common service
+clients that many people within IBM would probably find useful, 
+so I have published them here in a consumable form.
 
 Contributions in the form of feedback, patches, or bugs are appreciated.
 
-# sample usage
+# usage
+
+A default session is created for you on first access, which can be used to access service interfaces scoped to that account.
+Default sessions will read an API key from the conventional `IBMCLOUD_API_KEY` environment variable.
 
 Using the default session to get a CIS (Cloud Internet Services) client:
 
