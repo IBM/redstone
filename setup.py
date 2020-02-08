@@ -5,7 +5,7 @@ setup(
     version="0.1.6",
     author="Mathew Odden",
     author_email="mathewrodden@gmail.com",
-    url="https://github.com/locke105/redstone",
+    url="https://github.com/mrodden/redstone",
     packages=find_packages(),
     install_requires=[
         "requests[security]"
