@@ -17,7 +17,7 @@ Default sessions will read an API key from the conventional `IBMCLOUD_API_KEY` e
 
 Using the default session to get a CIS (Cloud Internet Services) client:
 
-``` {.sourceCode python}
+```python
 >>> import redstone
 >>> import os
 >>> cis = redstone.service("CIS", service_instance_id=os.environ.get("CIS_CRN"))
@@ -30,7 +30,7 @@ Using the default session to get a CIS (Cloud Internet Services) client:
 
 Build your own session for interacting with multiple regions and/or accounts within the same Python context:
 
-``` {.sourceCode python}
+```python
 >>> production = redstone.Session(
 ...     region="us-south",
 ...     iam_api_key=os.environ.get("IBMCLOUD_API_KEY")
