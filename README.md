@@ -66,7 +66,7 @@ There are two ways to use the crypto functionality, a CLI tool and the python mo
 ## rs-crypto CLI tool
 
 Upon installing the redstone module with pip, it will also install a command-line script under `rs-crypto` that can
-be used to do this encryption and decryption.
+be used to encrypt and decrypt.
 
 The script will read the API key used to interact with KeyProtect from the `IBMCLOUD_API_KEY` environment variable.
 
