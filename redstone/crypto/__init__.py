@@ -68,14 +68,16 @@ class MessageHeader(object):
         return "<%s %s>" % (type(self).__name__, ", ".join(prop_strs))
 
 
-def encrypt(source: bytes, key_crns: List[str], aad: Optional[str] = None) -> Tuple[bytes, MessageHeader]:
+def encrypt(source: bytes, key_crns: List[str], aad: Optional[str] = None, session: Optional[redstone.Session] = None) -> Tuple[bytes, MessageHeader]:
+    if session is None:
+        session = redstone.get_default_session()
 
     # generate deks with keyprotect master keys
     data_keys = []
     pt_data_key = b""
     for key_crn in key_crns:
         crn = redstone.crn.loads(key_crn)
-        kp = redstone.service("KeyProtect", region=crn.location, service_instance_id=crn.service_instance)
+        kp = session.service("KeyProtect", region=crn.location, service_instance_id=crn.service_instance)
 
         dek_data = kp.wrap(crn.resource, pt_data_key, aad=[aad])
         if not pt_data_key:
@@ -115,7 +117,10 @@ def encrypt(source: bytes, key_crns: List[str], aad: Optional[str] = None) -> Tu
     return message_header._pack() + encrypted_message, message_header
 
 
-def decrypt(source: bytes) -> Tuple[bytes, MessageHeader]:
+def decrypt(source: bytes, session: Optional[redstone.Session] = None) -> Tuple[bytes, MessageHeader]:
+    if session is None:
+        session = redstone.get_default_session()
+
     # unpack headers to get crypto information
     header, message = MessageHeader.from_message_with_body(source)
 
@@ -124,7 +129,7 @@ def decrypt(source: bytes) -> Tuple[bytes, MessageHeader]:
         # NOTE(mrodden): might be good to prefer a local region here sometime
         crn = redstone.crn.loads(data_key["key_crn"])
         LOG.info("Decrypting data key with master key: %s" % crn)
-        kp = redstone.service("KeyProtect", region=crn.location, service_instance_id=crn.service_instance)
+        kp = session.service("KeyProtect", region=crn.location, service_instance_id=crn.service_instance)
         try:
             pt_data_key = kp.unwrap(crn.resource, data_key["ciphertext"], aad=[header.aad])
         except Exception as ex:
