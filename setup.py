@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="redstone",
-    version="0.2.0",
+    version="0.2.1",
     author="Mathew Odden",
     author_email="mathewrodden@gmail.com",
     url="https://github.com/mrodden/redstone",
