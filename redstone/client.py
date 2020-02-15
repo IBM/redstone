@@ -358,8 +358,46 @@ class ResourceController(BaseClient):
         if resp.status_code != 204:
             raise Exception("Delete instance failed: code=%d body=%s" % (resp.status_code, resp.text))
 
+    def list_instances(self):
+        resp = self.session.get("{0}/v2/resource_instances".format(self.endpoint_url))
+        resp.raise_for_status()
+
+        while True:
+            for res in resp.json()["resources"]:
+                yield res
+
+            next_url = resp.json().get("next_url")
+            if not next_url:
+                break
+
+            resp = self.session.get("{0}{1}".format(self.endpoint_url, next_url))
+            resp.raise_for_status()
+
+    def get_instance(self, instance_id):
+        resp = self.session.get("{0}/v2/resource_instances/{1}".format(self.endpoint_url, instance_id))
+        if resp.status_code == 404:
+            return None
+
+        resp.raise_for_status()
+        return resp.json()
+
+
 
 class KeyProtect(BaseClient):
+
+    class KeyProtectError(Exception):
+
+        @staticmethod
+        def wrap(http_error):
+            try:
+                message = http_error.response.json()["resources"][0]["errorMsg"]
+            except KeyError:
+                message = http_error.response.text
+            err = KeyProtect.KeyProtectError(message)
+            err.http_error = http_error
+            err.__suppress_context__ = True
+            return err
+
 
     names = ["kms"]
 
@@ -393,7 +431,7 @@ class KeyProtect(BaseClient):
             resp.raise_for_status()
         except requests.HTTPError as http_err:
             http_err.raw_response = log_resp(resp)
-            raise http_err
+            raise KeyProtect.KeyProtectError.wrap(http_err)
 
     def keys(self):
         resp = self.session.get(
@@ -458,9 +496,9 @@ class KeyProtect(BaseClient):
 
     def wrap(self, key_id, plaintext, aad=None):
         if plaintext:
-            data = {'plaintext': base64.b64encode(plaintext).decode()}
+            data = {'plaintext': base64.b64encode(plaintext).decode("utf-8")}
         else:
-            data = None
+            data = {}
 
         if aad:
             data['aad'] = aad
@@ -468,13 +506,24 @@ class KeyProtect(BaseClient):
         return self._action(key_id, "wrap", data)
 
     def unwrap(self, key_id, ciphertext, aad=None):
+        # json body needs to be a UTF-8 string
+        if isinstance(ciphertext, bytes):
+            ciphertext = ciphertext.decode("utf-8")
+
         data = {'ciphertext': ciphertext}
 
         if aad:
             data['aad'] = aad
 
         resp = self._action(key_id, "unwrap", data)
-        return base64.b64decode(resp['plaintext'].encode())
+        return base64.b64decode(resp['plaintext'].encode("utf-8"))
+
+    def rotate(self, key_id, payload=None):
+        data = None
+        if payload:
+            data = {"payload": base64.b64encode(payload).decode("utf-8")}
+
+        return self._action(key_id, "rotate", data)
 
 
 class CISAuth(requests.auth.AuthBase):

@@ -8,11 +8,19 @@ setup(
     url="https://github.com/mrodden/redstone",
     packages=find_packages(),
     install_requires=[
-        "requests[security]"
+        "requests[security]",
+        "cryptography"
     ],
+    entry_points={
+        "console_scripts": [
+            "rs-crypto = redstone.crypto.__main__:main",
+        ]
+    },
     classifiers=[
         "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
         "License :: OSI Approved :: Apache Software License",
     ],
 )
