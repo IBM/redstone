@@ -8,10 +8,10 @@ platform services like ResourceController and IAM.
 You can install `redstone` with:
 
 ```sh
-$ pip install redstone
+$ pip3 install redstone
 
 # alternatively, you can do a user install if you are not an admin on your box
-$ pip install --user redstone
+$ pip3 install --user redstone
 ```
 
 Contributions in the form of feedback, patches, or bugs are appreciated.
