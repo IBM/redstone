@@ -5,6 +5,15 @@ Redstone is a Python library for interacting with IBM Cloud services.
 It currently includes support for IBM KeyProtect, IBM Kubernetes Service (IKS), and some
 platform services like ResourceController and IAM.
 
+You can install `redstone` with:
+
+```sh
+$ pip install redstone
+
+# alternatively, you can do a user install if you are not an admin on your box
+$ pip install --user redstone
+```
+
 Contributions in the form of feedback, patches, or bugs are appreciated.
 
 # usage
