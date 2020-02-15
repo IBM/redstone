@@ -70,7 +70,7 @@ be used to do this encryption and decryption.
 
 The script will read the API key used to interact with KeyProtect from the `IBMCLOUD_API_KEY` environment variable.
 
-Encrypting a file is straight forward with the `encrypt` commmand. The encrypted data will be print to stdout, and
+Encrypting a file is straight forward with the `encrypt` commmand. The encrypted data will be printed to stdout, and
 can be redirected to a file.
 
 ```sh
