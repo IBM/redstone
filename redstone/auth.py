@@ -192,7 +192,7 @@ def inspect_token(token):
         part = str(part)
         decoded_part = base64.urlsafe_b64decode(part + padding)
         try:
-            decoded_part = json.loads(decoded_part)
+            decoded_part = json.loads(decoded_part.decode("utf8"))
         except ValueError:
             pass
         decoded_parts.append(decoded_part)
