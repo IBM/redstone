@@ -7,6 +7,17 @@ Redstone is a Python library for interacting with IBM Cloud services.
 It currently includes support for IBM KeyProtect, IBM Kubernetes Service (IKS), and some
 platform services like ResourceController and IAM.
 
+Contributions in the form of feedback, patches, or bugs are appreciated. A [Gitter Channel](https://gitter.im/python-redstone/community?utm_source=share-link&utm_medium=link&utm_campaign=share-link) is available for questions and development discussion.
+
+
+* [Installation](#installation)
+* [Usage](#usage)
+* [rs-crypto](#encrypting-data-using-redstone.crypto-with-keyprotect)
+* [rs-keyprotect](#using-the-rs-keyprotect-cli)
+
+
+# Installation
+
 You can install `redstone` with:
 
 ```sh
@@ -16,9 +27,7 @@ $ pip3 install redstone
 $ pip3 install --user redstone
 ```
 
-Contributions in the form of feedback, patches, or bugs are appreciated. A [Gitter Channel](https://gitter.im/python-redstone/community?utm_source=share-link&utm_medium=link&utm_campaign=share-link) is available for questions and development discussion.
-
-# usage
+# Usage
 
 A default session is created for you on first access, which can be used to access service interfaces scoped to that account.
 Default sessions will read an API key from the conventional `IBMCLOUD_API_KEY` environment variable.
@@ -143,3 +152,26 @@ ic kp get -o json -i $instance_uuid $key_uuid
         "crn": "crn:v1:bluemix:public:kms:us-south:a/....:415ba6f3-43f9-4996-abcd-1234346:key:94e2639b-af2f-4f4f-a415-bb63820cf976"
 }
 ```
+
+# Using the rs-keyprotect CLI
+
+rs-keyprotect is a quick stand-alone CLI utility for interacting with KeyProtect via terminal or shell scripts.
+
+```sh
+# set an API for the account you wish to interact with
+export IBMCLOUD_API_KEY=...
+
+# list KeyProtect instances in the account
+rs-keyprotect list-instances
+ID                                      NAME              REGION
+07096bd5-6e6f-4b75-9978-9cbb18ce9a16    keyptest1         us-south
+143ac075-31ad-4bcc-bc9f-c352ea6bd213    Key Protect-y6    us-south
+
+# list the keys of an instance
+rs-keyprotect -i fb680ac4-e2d7-40c3-8b64-be59b13236cd list
+ID                                      NAME                     EXTRACTABLE
+52c3eea1-6db7-4dd8-8540-5d95af8c621b    kpregress_at_pass_key    False   
+e5931fa2-5830-4f12-9cfa-3d0099f79929    kpregress_at_pass_key    False   
+```
+
+For more usage, run `rs-keyprotect -h` and `rs-keyprotect <command> -h`
