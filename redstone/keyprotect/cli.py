@@ -77,9 +77,19 @@ def _main():
         rc = redstone.service("ResourceController")
 
         instances = rc.list_instances()
-        kms_instances = list(filter(lambda x: x["type"] == "service_instance" and x.get("sub_type") == "kms", instances))
+        kms_instances = list(
+            filter(
+                lambda x: x["type"] == "service_instance"
+                and x.get("sub_type") == "kms",
+                instances,
+            )
+        )
 
-        render_list(kms_instances, fields=["guid", "name", "region_id"], titles=["ID", "NAME", "REGION"])
+        render_list(
+            kms_instances,
+            fields=["guid", "name", "region_id"],
+            titles=["ID", "NAME", "REGION"],
+        )
         return
 
     instance_id = args.instance_id or os.environ.get("KP_INSTANCE_ID")
@@ -92,7 +102,9 @@ def _main():
         print("No instace found for ID: %s" % instance_id)
         return 1
 
-    kp = redstone.service("KeyProtect", service_instance_id=instance_id, region=instance_data["region_id"])
+    kp = redstone.service(
+        "KeyProtect", service_instance_id=instance_id, region=instance_data["region_id"]
+    )
 
     if args.action == "list":
         fields = ["id", "name", "extractable"]
@@ -141,7 +153,7 @@ def render_list(data, fields, titles):
         for field in fields:
             lengths[field] = max(len(str(datum.get(field, 0))), lengths.get(field, 0))
 
-    fmt_str = " ".join(map(lambda x: "%%(%s)-%ds" % (x, lengths.get(x, 0)+3), fields))
+    fmt_str = " ".join(map(lambda x: "%%(%s)-%ds" % (x, lengths.get(x, 0) + 3), fields))
 
     print(fmt_str % dict(zip(fields, titles)))
     for datum in data:

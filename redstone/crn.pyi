@@ -23,8 +23,6 @@ class CRN(object):
     service_instance: str
     resource_type: str
     resource: str
-
     def __init__(self, **kwargs): ...
-
 
 def loads(crn_string: str) -> CRN: ...

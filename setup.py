@@ -7,10 +7,7 @@ setup(
     author_email="mathewrodden@gmail.com",
     url="https://github.com/mrodden/redstone",
     packages=find_packages(),
-    install_requires=[
-        "requests[security]",
-        "cryptography"
-    ],
+    install_requires=["requests[security]", "cryptography"],
     entry_points={
         "console_scripts": [
             "rs-crypto = redstone.crypto.__main__:main",

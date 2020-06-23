@@ -43,7 +43,6 @@ SEGMENTS = [
 
 
 class CRN(object):
-
     def __init__(self, **kwargs):
         for segment in SEGMENTS:
             setattr(self, segment, kwargs.get(segment, ""))
@@ -56,9 +55,11 @@ class CRN(object):
 
     def __repr__(self):
         kv_pairs = ["%s=%r" % (seg, getattr(self, seg)) for seg in SEGMENTS]
-        return "%s.%s(%s)" % (self.__class__.__module__,
-                              self.__class__.__qualname__,
-                              ', '.join(kv_pairs))
+        return "%s.%s(%s)" % (
+            self.__class__.__module__,
+            self.__class__.__qualname__,
+            ", ".join(kv_pairs),
+        )
 
     def __str__(self):
         return ":".join([getattr(self, seg) for seg in SEGMENTS])

@@ -31,21 +31,24 @@ LOG = logging.getLogger(__name__)
 
 
 class TokenAuth(requests.auth.AuthBase):
-
     def __init__(self, credentials):
         self._token_manager = credentials
 
     def __call__(self, req):
-        req.headers['Authorization'] = \
-            "Bearer %s" % self._token_manager.get_token()
+        req.headers["Authorization"] = "Bearer %s" % self._token_manager.get_token()
         return req
 
 
 class BaseClient(object):
-
-    def __init__(self, region=None, service_instance_id=None,
-                 iam_api_key=None, verify=True, endpoint_url=None,
-                 credentials=None):
+    def __init__(
+        self,
+        region=None,
+        service_instance_id=None,
+        iam_api_key=None,
+        verify=True,
+        endpoint_url=None,
+        credentials=None,
+    ):
 
         self.session = requests.Session()
         self.session.verify = verify
@@ -53,7 +56,9 @@ class BaseClient(object):
         self.credentials = credentials
         # respect old path if user builds us directly with API key
         if iam_api_key:
-            LOG.warn("'iam_api_key' keyword arg is deprecated. use 'credentials' instead.")
+            LOG.warn(
+                "'iam_api_key' keyword arg is deprecated. use 'credentials' instead."
+            )
             self.credentials = auth.TokenManager(iam_api_key)
 
         self.session.auth = TokenAuth(self.credentials)
@@ -62,7 +67,7 @@ class BaseClient(object):
         self.region = region
 
         if endpoint_url:
-            if endpoint_url.endswith('/'):
+            if endpoint_url.endswith("/"):
                 endpoint_url = endpoint_url[:-1]
             self.endpoint_url = endpoint_url
         else:
@@ -78,9 +83,15 @@ class IKS(BaseClient):
 
         # IKS likes to throw back random 503s at times, but retrying generally works fine
         # requests default is Retry(0, read=False); see requests/adapters.py
-        retry_conf = Retry(total=5, read=False, backoff_factor=1, status_forcelist=[502, 503])
-        self.session.mount("https://", requests.adapters.HTTPAdapter(max_retries=retry_conf))
-        self.session.mount("http://", requests.adapters.HTTPAdapter(max_retries=retry_conf))
+        retry_conf = Retry(
+            total=5, read=False, backoff_factor=1, status_forcelist=[502, 503]
+        )
+        self.session.mount(
+            "https://", requests.adapters.HTTPAdapter(max_retries=retry_conf)
+        )
+        self.session.mount(
+            "http://", requests.adapters.HTTPAdapter(max_retries=retry_conf)
+        )
 
     def endpoint_for_region(self, region):
         return "https://containers.bluemix.net"
@@ -99,14 +110,14 @@ class IKS(BaseClient):
 
         resp = self.session.get(
             "{0}/v1/clusters".format(self.endpoint_url),
-            headers={
-                "X-Region": self.region,
-                "Accept": "application/json"
-            }
+            headers={"X-Region": self.region, "Accept": "application/json"},
         )
 
         if resp.status_code != 200:
-            raise Exception("error getting clusters: code=%d body=%r" % (resp.status_code, resp.text))
+            raise Exception(
+                "error getting clusters: code=%d body=%r"
+                % (resp.status_code, resp.text)
+            )
 
         return resp.json()
 
@@ -123,15 +134,16 @@ class IKS(BaseClient):
         # returns 200 OK on success
 
         resp = self.session.get(
-            "{0}/v1/clusters/{1}/workers?showDeleted=false".format(self.endpoint_url, cluster),
-            headers={
-                "X-Region": self.region,
-                "Accept": "application/json"
-            }
+            "{0}/v1/clusters/{1}/workers?showDeleted=false".format(
+                self.endpoint_url, cluster
+            ),
+            headers={"X-Region": self.region, "Accept": "application/json"},
         )
 
         if resp.status_code != 200:
-            raise Exception("error getting workers: code=%d body=%r" % (resp.status_code, resp.text))
+            raise Exception(
+                "error getting workers: code=%d body=%r" % (resp.status_code, resp.text)
+            )
 
         return resp.json()
 
@@ -152,45 +164,43 @@ class IKS(BaseClient):
         # returns 204 No Content on success
 
         resp = self.session.put(
-            "{0}/v1/clusters/{1}/workers/{2}".format(self.endpoint_url, cluster, worker),
-            headers={
-                "X-Region": self.region,
-                "Accept": "application/json"
-            },
-            json={"action": "update"}
+            "{0}/v1/clusters/{1}/workers/{2}".format(
+                self.endpoint_url, cluster, worker
+            ),
+            headers={"X-Region": self.region, "Accept": "application/json"},
+            json={"action": "update"},
         )
 
         if resp.status_code != 204:
-            raise Exception("error updating workers: code=%d body=%r" % (resp.status_code, resp.text))
+            raise Exception(
+                "error updating workers: code=%d body=%r"
+                % (resp.status_code, resp.text)
+            )
 
     def update_master(self, cluster, version):
 
         resp = self.session.put(
             "{0}/v1/clusters/{1}".format(self.endpoint_url, cluster),
-            headers={
-                "X-Region": self.region,
-                "Accept": "application/json"
-            },
-            json={
-                "action": "update",
-                "version": version
-            }
+            headers={"X-Region": self.region, "Accept": "application/json"},
+            json={"action": "update", "version": version},
         )
 
         if resp.status_code != 204:
-            raise Exception("error updating master: code=%d body=%r" % (resp.status_code, resp.text))
+            raise Exception(
+                "error updating master: code=%d body=%r" % (resp.status_code, resp.text)
+            )
 
     def get_kube_versions(self):
         resp = self.session.get(
             "{0}/v1/kube-versions".format(self.endpoint_url),
-            headers={
-                "X-Region": self.region,
-                "Accept": "application/json"
-            }
+            headers={"X-Region": self.region, "Accept": "application/json"},
         )
 
         if resp.status_code != 200:
-            raise Exception("error getting kube-versions: code=%d body=%r" % (resp.status_code, resp.text))
+            raise Exception(
+                "error getting kube-versions: code=%d body=%r"
+                % (resp.status_code, resp.text)
+            )
 
         return resp.json()
 
@@ -211,22 +221,21 @@ class IKS(BaseClient):
 
         # do a get token before, to make sure we get a valid refresh token.
         _token = self.session.auth._token_manager.get_token()
-        refresh_token = self.session.auth._token_manager._token_info.get('refresh_token')
+        refresh_token = self.session.auth._token_manager._token_info.get(
+            "refresh_token"
+        )
 
         # pure yaml output was added sometime after our original code to deal with the zipfile,
         # leaving both in because maybe its useful for someone to use the zip path still
-        params={}
+        params = {}
         if output_format == "yaml":
             params["format"] = "yaml"
 
-        path = '{0}/v1/clusters/{1}/config'
+        path = "{0}/v1/clusters/{1}/config"
         resp = self.session.get(
             path.format(self.endpoint_url, cluster),
             params=params,
-            headers={
-                "X-Region": self.region,
-                "X-Auth-Refresh-Token": refresh_token
-            }
+            headers={"X-Region": self.region, "X-Auth-Refresh-Token": refresh_token},
         )
 
         resp.raise_for_status()
@@ -240,17 +249,17 @@ class IKS(BaseClient):
 
             files = zip_file.namelist()
             for file_name in files:
-                if file_name.endswith('yml'):
+                if file_name.endswith("yml"):
                     kube_yaml = zip_file.read(file_name)
-                elif file_name.endswith('pem'):
+                elif file_name.endswith("pem"):
                     ca_data = zip_file.read(file_name)
 
             ca_b64 = base64.b64encode(ca_data)
 
             config_yaml = re.sub(
-                b'certificate-authority: .+',
-                b'certificate-authority-data: ' + ca_b64,
-                kube_yaml
+                b"certificate-authority: .+",
+                b"certificate-authority-data: " + ca_b64,
+                kube_yaml,
             )
 
         return base64.b64encode(config_yaml)
@@ -274,8 +283,9 @@ class ResourceController(BaseClient):
         default_rg = next(
             filter(
                 lambda x: x.get("name") in ["Default", "default"],
-                self.resource_groups().get("resources", [])),
-            None
+                self.resource_groups().get("resources", []),
+            ),
+            None,
         )
 
         if not default_rg:
@@ -291,13 +301,13 @@ class ResourceController(BaseClient):
 
         # apparently it doesn't complain if we drop query params,
         # didn't want to have to look up the account ID anyway, so +2
-        resp = self.session.get(
-            "{0}/v1/resource_groups".format(netloc),
-        )
+        resp = self.session.get("{0}/v1/resource_groups".format(netloc),)
 
         if resp.status_code != 200:
-            raise Exception("Failed to get resource groups: url=%r code=%d body=%r" % (
-                resp.request.url, resp.status_code, resp.text))
+            raise Exception(
+                "Failed to get resource groups: url=%r code=%d body=%r"
+                % (resp.request.url, resp.status_code, resp.text)
+            )
 
         return resp.json()
 
@@ -318,7 +328,9 @@ class ResourceController(BaseClient):
 
         # TODO(mroddon): do global catalog lookup of service name and get price plans
         # this is hardcoded to build KeyProtect instances right now... sorry :/
-        resource_plan_id = "eedd3585-90c6-4c8f-be3d-062069e99fc3"  # keyprotect tiered-pricing ID
+        resource_plan_id = (
+            "eedd3585-90c6-4c8f-be3d-062069e99fc3"  # keyprotect tiered-pricing ID
+        )
 
         return self._create_instance(name, region, resource_group_id, resource_plan_id)
 
@@ -326,24 +338,25 @@ class ResourceController(BaseClient):
 
         # seems like the target_crn is the region selector, and its just the price plan ID with the region stuck at the end
         target_crn = "crn:v1:bluemix:public:globalcatalog::::deployment:{0}%3A{1}".format(
-            resource_plan_id,
-            region
+            resource_plan_id, region
         )
 
         body = {
             "name": name,
             "resource_plan_id": resource_plan_id,
             "resource_group_id": resource_group_id,
-            "target_crn": target_crn
+            "target_crn": target_crn,
         }
 
         resp = self.session.post(
-            "{0}/v1/resource_instances".format(self.endpoint_url),
-            json=body
+            "{0}/v1/resource_instances".format(self.endpoint_url), json=body
         )
 
         if resp.status_code != 201:
-            raise Exception("Create instance failed: code=%d body=%s" % (resp.status_code, resp.text))
+            raise Exception(
+                "Create instance failed: code=%d body=%s"
+                % (resp.status_code, resp.text)
+            )
 
         return resp.json().get("guid"), resp.json().get("id")
 
@@ -356,7 +369,10 @@ class ResourceController(BaseClient):
         )
 
         if resp.status_code != 204:
-            raise Exception("Delete instance failed: code=%d body=%s" % (resp.status_code, resp.text))
+            raise Exception(
+                "Delete instance failed: code=%d body=%s"
+                % (resp.status_code, resp.text)
+            )
 
     def list_instances(self):
         resp = self.session.get("{0}/v2/resource_instances".format(self.endpoint_url))
@@ -374,7 +390,9 @@ class ResourceController(BaseClient):
             resp.raise_for_status()
 
     def get_instance(self, instance_id):
-        resp = self.session.get("{0}/v2/resource_instances/{1}".format(self.endpoint_url, instance_id))
+        resp = self.session.get(
+            "{0}/v2/resource_instances/{1}".format(self.endpoint_url, instance_id)
+        )
         if resp.status_code == 404:
             return None
 
@@ -382,11 +400,8 @@ class ResourceController(BaseClient):
         return resp.json()
 
 
-
 class KeyProtect(BaseClient):
-
     class KeyProtectError(Exception):
-
         @staticmethod
         def wrap(http_error):
             try:
@@ -398,32 +413,32 @@ class KeyProtect(BaseClient):
             err.__suppress_context__ = True
             return err
 
-
     names = ["kms"]
 
     def __init__(self, *args, **kwargs):
         super(KeyProtect, self).__init__(*args, **kwargs)
 
         if not self.service_instance_id:
-            raise ValueError("KeyProtect service requires 'service_instance_id' to be set!")
+            raise ValueError(
+                "KeyProtect service requires 'service_instance_id' to be set!"
+            )
 
-        self.session.headers['Bluemix-Instance'] = self.service_instance_id
+        self.session.headers["Bluemix-Instance"] = self.service_instance_id
 
     def endpoint_for_region(self, region):
         return "https://keyprotect.{0}.bluemix.net".format(region)
 
     def _validate_resp(self, resp):
-
         def log_resp(resp):
             resp_str = io.StringIO()
-            print(u"%s %s" % (resp.status_code, resp.reason), file=resp_str)
+            print("%s %s" % (resp.status_code, resp.reason), file=resp_str)
 
             for k, v in resp.headers.items():
-                if k.lower() == 'authorization':
-                    v = 'REDACTED'
+                if k.lower() == "authorization":
+                    v = "REDACTED"
                 print("%s: %s" % (k, v), file=resp_str)
 
-            print(resp.content.decode(), end=u'', file=resp_str)
+            print(resp.content.decode(), end="", file=resp_str)
             return resp_str.getvalue()
 
         try:
@@ -434,74 +449,66 @@ class KeyProtect(BaseClient):
             raise KeyProtect.KeyProtectError.wrap(http_err)
 
     def keys(self):
-        resp = self.session.get(
-            "%s/api/v2/keys" % self.endpoint_url
-        )
+        resp = self.session.get("%s/api/v2/keys" % self.endpoint_url)
 
         self._validate_resp(resp)
 
-        return resp.json().get('resources', [])
+        return resp.json().get("resources", [])
 
     def get(self, key_id):
-        resp = self.session.get(
-            "%s/api/v2/keys/%s" % (self.endpoint_url, key_id)
-        )
+        resp = self.session.get("%s/api/v2/keys/%s" % (self.endpoint_url, key_id))
 
         self._validate_resp(resp)
 
-        return resp.json().get('resources')[0]
+        return resp.json().get("resources")[0]
 
     def create(self, name, payload=None, raw_payload=None, root=False):
 
         data = {
             "metadata": {
                 "collectionType": "application/vnd.ibm.kms.key+json",
-                "collectionTotal": 1},
+                "collectionTotal": 1,
+            },
             "resources": [
                 {
                     "type": "application/vnd.ibm.kms.key+json",
                     "extractable": not root,
-                    "name": name
+                    "name": name,
                 }
-            ]
+            ],
         }
 
         # use raw_payload if given, else assume payload needs some base64 love
         if raw_payload is not None:
-            data['resources'][0]['payload'] = raw_payload
+            data["resources"][0]["payload"] = raw_payload
         elif payload is not None:
-            data['resources'][0]['payload'] = base64.b64encode(payload).decode('utf-8')
+            data["resources"][0]["payload"] = base64.b64encode(payload).decode("utf-8")
 
-        resp = self.session.post(
-            "%s/api/v2/keys" % self.endpoint_url,
-            json=data
-        )
+        resp = self.session.post("%s/api/v2/keys" % self.endpoint_url, json=data)
         self._validate_resp(resp)
-        return resp.json().get('resources')[0]
+        return resp.json().get("resources")[0]
 
     def delete(self, key_id):
-        resp = self.session.delete(
-            "%s/api/v2/keys/%s" % (self.endpoint_url, key_id)
-        )
+        resp = self.session.delete("%s/api/v2/keys/%s" % (self.endpoint_url, key_id))
         self._validate_resp(resp)
 
     def _action(self, key_id, action, jsonable):
         resp = self.session.post(
             "%s/api/v2/keys/%s" % (self.endpoint_url, key_id),
             params={"action": action},
-            json=jsonable
+            json=jsonable,
         )
         self._validate_resp(resp)
         return resp.json()
 
     def wrap(self, key_id, plaintext, aad=None):
         if plaintext:
-            data = {'plaintext': base64.b64encode(plaintext).decode("utf-8")}
+            data = {"plaintext": base64.b64encode(plaintext).decode("utf-8")}
         else:
             data = {}
 
         if aad:
-            data['aad'] = aad
+            data["aad"] = aad
 
         return self._action(key_id, "wrap", data)
 
@@ -510,13 +517,13 @@ class KeyProtect(BaseClient):
         if isinstance(ciphertext, bytes):
             ciphertext = ciphertext.decode("utf-8")
 
-        data = {'ciphertext': ciphertext}
+        data = {"ciphertext": ciphertext}
 
         if aad:
-            data['aad'] = aad
+            data["aad"] = aad
 
         resp = self._action(key_id, "unwrap", data)
-        return base64.b64decode(resp['plaintext'].encode("utf-8"))
+        return base64.b64decode(resp["plaintext"].encode("utf-8"))
 
     def rotate(self, key_id, payload=None):
         data = None
@@ -527,13 +534,11 @@ class KeyProtect(BaseClient):
 
 
 class CISAuth(requests.auth.AuthBase):
-
     def __init__(self, credentials):
         self._token_manager = credentials
 
     def __call__(self, req):
-        req.headers['x-auth-user-token'] = \
-            "Bearer %s" % self._token_manager.get_token()
+        req.headers["x-auth-user-token"] = "Bearer %s" % self._token_manager.get_token()
         return req
 
 
@@ -562,14 +567,9 @@ class CIS(BaseClient):
         return resp.json().get("result")
 
     def update_pool(self, pool):
-        pool_id = pool.get('id')
+        pool_id = pool.get("id")
 
-        keys_to_remove = [
-            'created_on',
-            'modified_on',
-            'healthy',
-            'id'
-        ]
+        keys_to_remove = ["created_on", "modified_on", "healthy", "id"]
 
         for key in keys_to_remove:
             try:
@@ -579,7 +579,7 @@ class CIS(BaseClient):
 
         path = "{0}/v1/{1}/load_balancers/pools/{2}"
         resp = self.session.put(
-            path.format(self.endpoint_url, self.safe_crn, pool_id),
-            json=pool)
+            path.format(self.endpoint_url, self.safe_crn, pool_id), json=pool
+        )
         resp.raise_for_status()
         return resp.json().get("result")

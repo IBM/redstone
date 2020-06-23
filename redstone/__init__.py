@@ -22,7 +22,6 @@ DEFAULT_SESSION = None
 
 
 class Session(object):
-
     def __init__(self, region=None, iam_api_key=None):
         self.region = region
         self.iam_api_key = iam_api_key
@@ -33,14 +32,14 @@ class Session(object):
         if not client_cls:
             raise ValueError("No client for service '%s'" % service_name)
 
-        if kwargs.get('iam_api_key'):
-            del kwargs['iam_api_key']
+        if kwargs.get("iam_api_key"):
+            del kwargs["iam_api_key"]
 
-        if not kwargs.get('region'):
-            kwargs['region'] = self.region
+        if not kwargs.get("region"):
+            kwargs["region"] = self.region
 
-        if not kwargs.get('credentials'):
-            kwargs['credentials'] = self.credentials
+        if not kwargs.get("credentials"):
+            kwargs["credentials"] = self.credentials
 
         return client_cls(**kwargs)
 
@@ -51,7 +50,7 @@ def get_default_session():
     if DEFAULT_SESSION is None:
         DEFAULT_SESSION = Session(
             iam_api_key=os.environ.get("IBMCLOUD_API_KEY"),
-            region=os.environ.get("IBMCLOUD_REGION")
+            region=os.environ.get("IBMCLOUD_REGION"),
         )
 
     return DEFAULT_SESSION

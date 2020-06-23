@@ -29,7 +29,6 @@ LOG = logging.getLogger(__name__)
 
 
 class TokenManager(object):
-
     def __init__(self, api_key, iam_endpoint=None):
         self.api_key = api_key
         self.iam_endpoint = iam_endpoint
@@ -38,13 +37,15 @@ class TokenManager(object):
 
     def get_token(self):
         with self._lock:
-            if (not self._token_info.get('access_token') or
-                    self.is_refresh_token_expired()):
+            if (
+                not self._token_info.get("access_token")
+                or self.is_refresh_token_expired()
+            ):
                 self._request_token()
             elif self.is_token_expired():
                 self._refresh_token()
 
-            return self._token_info.get('access_token')
+            return self._token_info.get("access_token")
 
     def _request_token(self):
         token_resp = auth(apikey=self.api_key, iam_endpoint=self.iam_endpoint)
@@ -55,8 +56,9 @@ class TokenManager(object):
 
     def _refresh_token(self):
         token_resp = auth(
-            refresh_token=self._token_info.get('refresh_token'),
-            iam_endpoint=self.iam_endpoint)
+            refresh_token=self._token_info.get("refresh_token"),
+            iam_endpoint=self.iam_endpoint,
+        )
         if isinstance(token_resp, dict):
             self._token_info = token_resp
         else:
@@ -65,9 +67,9 @@ class TokenManager(object):
     def is_token_expired(self):
         # refresh even with 20% time still remainig,
         # this should be 12 minutes before expiration for 1h tokens
-        token_expire_time = self._token_info.get('expiration', 0)
-        token_expires_in = self._token_info.get('expires_in', 0)
-        return (time.time() >= (token_expire_time - (0.2 * token_expires_in)))
+        token_expire_time = self._token_info.get("expiration", 0)
+        token_expires_in = self._token_info.get("expires_in", 0)
+        return time.time() >= (token_expire_time - (0.2 * token_expires_in))
 
     def is_refresh_token_expired(self):
         # no idea how long these last,
@@ -75,12 +77,13 @@ class TokenManager(object):
         # but it was also assuming they expire within 7 days...
         # assume 7 days, because better safe than sorry
         day = 24 * 60 * 60
-        refresh_expire_time = self._token_info.get('expiration', 0) + (7 * day)
-        return (time.time() >= refresh_expire_time)
+        refresh_expire_time = self._token_info.get("expiration", 0) + (7 * day)
+        return time.time() >= refresh_expire_time
 
 
-def auth(username=None, password=None, apikey=None,
-         refresh_token=None, iam_endpoint=None):
+def auth(
+    username=None, password=None, apikey=None, refresh_token=None, iam_endpoint=None
+):
     """
     Makes a authentication request to the IAM api
     :param username: Username
@@ -95,40 +98,38 @@ def auth(username=None, password=None, apikey=None,
     :return: Response
     """
     if not iam_endpoint:
-        iam_endpoint = 'https://iam.cloud.ibm.com/'
+        iam_endpoint = "https://iam.cloud.ibm.com/"
 
-    if iam_endpoint[-1] == '/':
+    if iam_endpoint[-1] == "/":
         iam_endpoint = iam_endpoint[:-1]
 
-    api_endpoint = iam_endpoint + '/oidc/token'
+    api_endpoint = iam_endpoint + "/oidc/token"
 
     # HTTP Headers
-    headers = {
-        'Authorization': 'Basic Yng6Yng=',
-        'Accept': 'application/json'
-    }
+    headers = {"Authorization": "Basic Yng6Yng=", "Accept": "application/json"}
 
     # HTTP Payload
     data = {
-        'response_type': 'cloud_iam',
-        'uaa_client_id': 'cf',
-        'uaa_client_secret': ''
+        "response_type": "cloud_iam",
+        "uaa_client_id": "cf",
+        "uaa_client_secret": "",
     }
 
     # Setup grant type
     if apikey:
-        data['grant_type'] = 'urn:ibm:params:oauth:grant-type:apikey'
-        data['apikey'] = apikey
+        data["grant_type"] = "urn:ibm:params:oauth:grant-type:apikey"
+        data["apikey"] = apikey
     elif refresh_token:
-        data['grant_type'] = 'refresh_token'
-        data['refresh_token'] = refresh_token
+        data["grant_type"] = "refresh_token"
+        data["refresh_token"] = refresh_token
     elif username and password:
-        data['grant_type'] = 'password'
-        data['username'] = username
-        data['password'] = password
+        data["grant_type"] = "password"
+        data["username"] = username
+        data["password"] = password
     else:
         raise ValueError(
-            "Must specify one of username/password, apikey, or refresh_token!")
+            "Must specify one of username/password, apikey, or refresh_token!"
+        )
 
     resp = requests.post(api_endpoint, data=data, headers=headers)
 
@@ -139,12 +140,12 @@ def auth(username=None, password=None, apikey=None,
 
 
 def get_orgs(bearer_token):
-    api_endpoint = 'https://api.ng.bluemix.net/v2/organizations'
+    api_endpoint = "https://api.ng.bluemix.net/v2/organizations"
 
     headers = {
-        'Content-Type': 'application/x-www-form-urlencoded;charset=utf',
-        'Authorization': 'Bearer %s' % bearer_token,
-        'Accept': 'application/json;charset=utf-8'
+        "Content-Type": "application/x-www-form-urlencoded;charset=utf",
+        "Authorization": "Bearer %s" % bearer_token,
+        "Accept": "application/json;charset=utf-8",
     }
 
     resp = requests.get(api_endpoint, headers=headers)
@@ -152,12 +153,12 @@ def get_orgs(bearer_token):
 
 
 def get_spaces(bearer_token, spaces_path):
-    api_endpoint = 'https://api.ng.bluemix.net%s' % spaces_path
+    api_endpoint = "https://api.ng.bluemix.net%s" % spaces_path
 
     headers = {
-        'Content-Type': 'application/x-www-form-urlencoded;charset=utf',
-        'Authorization': 'Bearer %s' % bearer_token,
-        'Accept': 'application/json;charset=utf-8'
+        "Content-Type": "application/x-www-form-urlencoded;charset=utf",
+        "Authorization": "Bearer %s" % bearer_token,
+        "Accept": "application/json;charset=utf-8",
     }
 
     resp = request.get(api_endpoint, headers=headers)
@@ -168,16 +169,16 @@ def find_space_and_org(bearer_token, org_name, space_name):
     org_resp = get_orgs(bearer_token)
     org_data = json.loads(org_resp)
 
-    for org in org_data['resources']:
-        if org_name == org.get('entity', {}).get('name'):
+    for org in org_data["resources"]:
+        if org_name == org.get("entity", {}).get("name"):
             org_info = org
             break
 
-    space_resp = get_spaces(bearer_token, org_info['entity']['spaces_url'])
+    space_resp = get_spaces(bearer_token, org_info["entity"]["spaces_url"])
     space_data = json.loads(space_resp)
 
-    for space in space_data['resources']:
-        if space_name == space.get('entity', {}).get('name'):
+    for space in space_data["resources"]:
+        if space_name == space.get("entity", {}).get("name"):
             space_info = space
             break
 
@@ -188,7 +189,7 @@ def inspect_token(token):
     parts = token.split(".")[:2]
     decoded_parts = []
     for part in parts:
-        padding = '=' * (len(part) % 4)
+        padding = "=" * (len(part) % 4)
         part = str(part)
         decoded_part = base64.urlsafe_b64decode(part + padding)
         try:
@@ -205,15 +206,16 @@ def main():
 
     # iterate through possible things that could be used to get us the key,
     # last one that is not None or empty will win
-    possible_keys = [os.environ.get('BLUEMIX_API_KEY'),
-                     os.environ.get('IBMCLOUD_API_KEY')]
+    possible_keys = [
+        os.environ.get("BLUEMIX_API_KEY"),
+        os.environ.get("IBMCLOUD_API_KEY"),
+    ]
     for pkey in possible_keys:
         if pkey:
             api_key = pkey
 
     if not api_key:
-        print("error: please set BLUEMIX_API_KEY or IBMCLOUD_API_KEY",
-              file=sys.stderr)
+        print("error: please set BLUEMIX_API_KEY or IBMCLOUD_API_KEY", file=sys.stderr)
         return 1
 
     tokman = TokenManager(api_key=api_key)

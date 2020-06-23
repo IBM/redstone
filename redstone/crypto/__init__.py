@@ -42,11 +42,13 @@ class MessageHeader(object):
             "aad": self.aad,
             "algorithm": self.algorithm,
         }
-        message_header = base64.b64encode(json.dumps(message_header_data).encode("utf-8"))
+        message_header = base64.b64encode(
+            json.dumps(message_header_data).encode("utf-8")
+        )
         message_header = (
-            _message_version_to_bytes(self.version) +
-            len(message_header).to_bytes(8, byteorder="big") +
-            message_header
+            _message_version_to_bytes(self.version)
+            + len(message_header).to_bytes(8, byteorder="big")
+            + message_header
         )
         return message_header
 
@@ -55,20 +57,29 @@ class MessageHeader(object):
         version = get_message_version(message)
         if version != MessageHeader.version:
             raise Exception(
-                "Invalid message version. Expecting %d, found %d" %
-                (MessageHeader.version, version))
+                "Invalid message version. Expecting %d, found %d"
+                % (MessageHeader.version, version)
+            )
 
         header_len = int.from_bytes(message[1:9], byteorder="big")
-        header_bytes = message[9:header_len + 9]
+        header_bytes = message[9 : header_len + 9]
         header_dict = json.loads(base64.b64decode(header_bytes).decode("utf-8"))
-        return MessageHeader(**header_dict), message[header_len + 9:]
+        return MessageHeader(**header_dict), message[header_len + 9 :]
 
     def __repr__(self):
-        prop_strs = ["%s=%r" % (key, getattr(self, key)) for key in ["version", "data_keys", "aad", "algorithm"]]
+        prop_strs = [
+            "%s=%r" % (key, getattr(self, key))
+            for key in ["version", "data_keys", "aad", "algorithm"]
+        ]
         return "<%s %s>" % (type(self).__name__, ", ".join(prop_strs))
 
 
-def encrypt(source: bytes, key_crns: List[str], aad: Optional[str] = None, session: Optional[redstone.Session] = None) -> Tuple[bytes, MessageHeader]:
+def encrypt(
+    source: bytes,
+    key_crns: List[str],
+    aad: Optional[str] = None,
+    session: Optional[redstone.Session] = None,
+) -> Tuple[bytes, MessageHeader]:
     if session is None:
         session = redstone.get_default_session()
 
@@ -77,7 +88,9 @@ def encrypt(source: bytes, key_crns: List[str], aad: Optional[str] = None, sessi
     pt_data_key = b""
     for key_crn in key_crns:
         crn = redstone.crn.loads(key_crn)
-        kp = session.service("KeyProtect", region=crn.location, service_instance_id=crn.service_instance)
+        kp = session.service(
+            "KeyProtect", region=crn.location, service_instance_id=crn.service_instance
+        )
 
         dek_data = kp.wrap(crn.resource, pt_data_key, aad=[aad])
         if not pt_data_key:
@@ -86,12 +99,8 @@ def encrypt(source: bytes, key_crns: List[str], aad: Optional[str] = None, sessi
 
         # ciphertext is also a utf8 string, but we don't need to do anything but store it for now
         data_keys.append(
-            {
-                "ciphertext": dek_data["ciphertext"],
-                "key_crn": key_crn,
-            }
+            {"ciphertext": dek_data["ciphertext"], "key_crn": key_crn,}
         )
-
 
     # we now have all the data keys and plaintext form to do some encryption with
 
@@ -104,10 +113,14 @@ def encrypt(source: bytes, key_crns: List[str], aad: Optional[str] = None, sessi
     gcm = AESGCM(pt_data_key)
 
     # use standard 12 byte nonce
-    nonce = os.urandom(12) # see: https://cryptography.io/en/latest/random-numbers/#random-number-generation
+    nonce = os.urandom(
+        12
+    )  # see: https://cryptography.io/en/latest/random-numbers/#random-number-generation
 
     # tag is the last 16 bytes
-    ciphertext_and_tag = gcm.encrypt(nonce, source, aad.encode("utf-8") if aad else None)
+    ciphertext_and_tag = gcm.encrypt(
+        nonce, source, aad.encode("utf-8") if aad else None
+    )
 
     # prepend nonce to ct and tag
     encrypted_message = nonce + ciphertext_and_tag
@@ -117,7 +130,9 @@ def encrypt(source: bytes, key_crns: List[str], aad: Optional[str] = None, sessi
     return message_header._pack() + encrypted_message, message_header
 
 
-def decrypt(source: bytes, session: Optional[redstone.Session] = None) -> Tuple[bytes, MessageHeader]:
+def decrypt(
+    source: bytes, session: Optional[redstone.Session] = None
+) -> Tuple[bytes, MessageHeader]:
     if session is None:
         session = redstone.get_default_session()
 
@@ -129,9 +144,13 @@ def decrypt(source: bytes, session: Optional[redstone.Session] = None) -> Tuple[
         # NOTE(mrodden): might be good to prefer a local region here sometime
         crn = redstone.crn.loads(data_key["key_crn"])
         LOG.info("Decrypting data key with master key: %s" % crn)
-        kp = session.service("KeyProtect", region=crn.location, service_instance_id=crn.service_instance)
+        kp = session.service(
+            "KeyProtect", region=crn.location, service_instance_id=crn.service_instance
+        )
         try:
-            pt_data_key = kp.unwrap(crn.resource, data_key["ciphertext"], aad=[header.aad])
+            pt_data_key = kp.unwrap(
+                crn.resource, data_key["ciphertext"], aad=[header.aad]
+            )
         except Exception as ex:
             LOG.warning("Exception while attempting unwap: %s" % str(ex))
             continue
@@ -144,7 +163,9 @@ def decrypt(source: bytes, session: Optional[redstone.Session] = None) -> Tuple[
 
     # got key, decrypt
     gcm = AESGCM(pt_data_key)
-    plaintext_message = gcm.decrypt(message[:12], message[12:], header.aad.encode("utf-8") if header.aad else None)
+    plaintext_message = gcm.decrypt(
+        message[:12], message[12:], header.aad.encode("utf-8") if header.aad else None
+    )
 
     return plaintext_message, header
 
