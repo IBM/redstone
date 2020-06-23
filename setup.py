@@ -9,7 +9,7 @@ setup(
     packages=find_packages(),
     install_requires=["requests[security]", "cryptography"],
     extras_require={
-        "docs": ["sphinx", "sphinx_rtd_theme"],
+        "docs": ["sphinx>=3.1", "sphinx_rtd_theme"],
     },
     entry_points={
         "console_scripts": [
