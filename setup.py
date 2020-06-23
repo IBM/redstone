@@ -14,6 +14,7 @@ setup(
     entry_points={
         "console_scripts": [
             "rs-crypto = redstone.crypto.__main__:main",
+            "rs-keyprotect = redstone.keyprotect.cli:main",
         ]
     },
     classifiers=[
