@@ -12,10 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""
+This module holds the service specific client classes, as well
+as the BaseClient class that they extend from for shared business function.
+
+If you wish to add or extend functionality to a client or service, this is
+where the concrete classes and logic are for those purposes.
+"""
+
 import base64
 import io
 import logging
 import re
+from typing import List, Dict
 import urllib.parse
 import zipfile
 
@@ -96,7 +105,13 @@ class IKS(BaseClient):
     def endpoint_for_region(self, region):
         return "https://containers.bluemix.net"
 
-    def get_clusters(self):
+    def get_clusters(self) -> List[Dict]:
+        """
+        List the current IKS clusters in a specific region.
+
+        Returns:
+            A list of dict objects representing the cluster metadata.
+        """
 
         """
         GET /v1/clusters HTTP/1.1
@@ -122,6 +137,7 @@ class IKS(BaseClient):
         return resp.json()
 
     def get_workers(self, cluster):
+        """List the workers in an IKS cluster."""
 
         """
         GET /v1/clusters/<cluster_name_or_id>/workers?showDeleted=false HTTP/1.1
@@ -148,6 +164,13 @@ class IKS(BaseClient):
         return resp.json()
 
     def update_worker(self, cluster, worker):
+        """
+        Initiate an update on a worker node.
+
+        The worker node will update to the latest revision that matches the
+        master/API server version. i.e. If the master is at 1.16.x, the worker
+        will update to the latest 1.16.x series.
+        """
 
         """
         PUT /v1/clusters/<cluster_name_or_id>/workers/<worker_name_or_id> HTTP/1.1
@@ -178,6 +201,7 @@ class IKS(BaseClient):
             )
 
     def update_master(self, cluster, version):
+        """Initate an update on the master nodes of a cluster."""
 
         resp = self.session.put(
             "{0}/v1/clusters/{1}".format(self.endpoint_url, cluster),
@@ -209,8 +233,9 @@ class IKS(BaseClient):
         Retrieve a KubeConfig that can be used with kubectl to
         interact with the given IKS cluster.
 
-        :returns: base64 encoded file data; can be decode and written to file,
-        or used with the python kubernetes client to interact in the same process
+        Returns:
+            base64 encoded file data; can be decode and written to file,
+            or used with the python kubernetes client to interact in the same process
         """
         output_format = "yaml"
 
@@ -401,6 +426,9 @@ class ResourceController(BaseClient):
 
 
 class KeyProtect(BaseClient):
+    """
+    API Docs: https://cloud.ibm.com/apidocs/key-protect
+    """
     class KeyProtectError(Exception):
         @staticmethod
         def wrap(http_error):

@@ -80,6 +80,8 @@ def encrypt(
     aad: Optional[str] = None,
     session: Optional[redstone.Session] = None,
 ) -> Tuple[bytes, MessageHeader]:
+    """Encrypt byte data using a given set of keys from KeyProtect."""
+
     if session is None:
         session = redstone.get_default_session()
 
@@ -133,6 +135,8 @@ def encrypt(
 def decrypt(
     source: bytes, session: Optional[redstone.Session] = None
 ) -> Tuple[bytes, MessageHeader]:
+    """Decrypt data previously encrypted with the encrypt function."""
+
     if session is None:
         session = redstone.get_default_session()
 
