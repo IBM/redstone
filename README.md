@@ -12,7 +12,7 @@ Contributions in the form of feedback, patches, or bugs are appreciated. A [Gitt
 
 * [Installation](#installation)
 * [Usage](#usage)
-* [rs-crypto](#encrypting-data-using-redstone.crypto-with-keyprotect)
+* [rs-crypto](#encrypting-data-using-redstonecrypto-with-keyprotect)
 * [rs-keyprotect](#using-the-rs-keyprotect-cli)
 
 
