@@ -301,6 +301,21 @@ class ResourceController(BaseClient):
     names = ["rc"]
     KEYPROTECT_PLAN_ID = "eedd3585-90c6-4c8f-be3d-062069e99fc3"  # keyprotect tiered-pricing ID
 
+    def __init__(self, *args, **kwargs):
+        super(ResourceController, self).__init__(*args, **kwargs)
+
+        # add retries for RC, since it has issues communicating with global catalog
+        # and will throw a 504 in this case
+        retry_conf = Retry(
+            total=5, read=False, backoff_factor=1, status_forcelist=[502, 503, 504]
+        )
+        self.session.mount(
+            "https://", requests.adapters.HTTPAdapter(max_retries=retry_conf)
+        )
+        self.session.mount(
+            "http://", requests.adapters.HTTPAdapter(max_retries=retry_conf)
+        )
+
     def endpoint_for_region(self, region):
         return "https://resource-controller.cloud.ibm.com"
 
