@@ -12,6 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""
+This module holds functionality for authenticating with IBM Cloud services,
+which mainly involves getting a token from IAM and using that token
+while making requests to the various other services.
+
+Most users will want to use the high level :py:class:`TokenManager`
+which provides caching and automatic refresh for tokens.
+
+There is also a low level :py:func:`auth` function that can be used
+to request a new token from IAM as needed.
+"""
+
 from __future__ import print_function
 
 import base64
@@ -29,13 +41,31 @@ LOG = logging.getLogger(__name__)
 
 
 class TokenManager(object):
+    """
+    TokenManager objects are a wrapper around an API key credential, which
+    is used to request tokens when they are needed.
+
+    A TokenManager object caches tokens to minimize requests to IAM,
+    and also will take care of requesting new tokens when the current
+    cached one is expired.
+
+    Example usage::
+
+        tokman = TokenManager(api_key="my-cloud-api-key")
+
+        # get_token() will return a cached version or request one if needed
+        iam_token = tokman.get_token()
+    """
+
     def __init__(self, api_key, iam_endpoint=None):
         self.api_key = api_key
         self.iam_endpoint = iam_endpoint
         self._token_info = {}
         self._lock = threading.RLock()
 
-    def get_token(self):
+    def get_token(self) -> str:
+        """Retrieve a valid, unexpired token from IAM if needed, or return a cached, unexpired token."""
+
         with self._lock:
             if (
                 not self._token_info.get("access_token")
@@ -65,6 +95,12 @@ class TokenManager(object):
             raise Exception("Error getting refreshing token: %s" % token_resp)
 
     def is_token_expired(self):
+        """
+        Use to check if the cached IAM token needs to be refreshed.
+
+        Returns:
+            bool, True if the token needs to be refreshed, False otherwise
+        """
         # refresh even with 20% time still remainig,
         # this should be 12 minutes before expiration for 1h tokens
         token_expire_time = self._token_info.get("expiration", 0)
@@ -72,6 +108,19 @@ class TokenManager(object):
         return time.time() >= (token_expire_time - (0.2 * token_expires_in))
 
     def is_refresh_token_expired(self):
+        """
+        Use to check if the cached IAM Refresh token needs to be refreshed.
+
+        The Refresh token is a different token than the IAM token used
+        to interact with services. A Refresh token is a longer lasting token
+        that can be used instead of an API key or password credential to request
+        a new IAM token. It is useful for some specific cases, where the API key
+        or password needs to be dropped and the Refresh token can be used instead
+        to generate IAM tokens.
+
+        Returns:
+            bool, True if the Refresh token needs to be refreshed, False otherwise
+        """
         # no idea how long these last,
         # but some other code suggested up to 30 days,
         # but it was also assuming they expire within 7 days...
@@ -85,7 +134,9 @@ def auth(
     username=None, password=None, apikey=None, refresh_token=None, iam_endpoint=None
 ):
     """
-    Makes a authentication request to the IAM api
+    Makes a authentication request to the IAM API to retrieve an IAM token and
+    IAM Refresh token.
+
     :param username: Username
     :param password: Password
     :param apikey: IBMCloud/Bluemix API Key

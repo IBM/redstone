@@ -25,6 +25,16 @@ Modules
    =======
 
 
+:mod:`redstone.auth` --- IBM Cloud IAM Authentication
+-----------------------------------------------------
+
+.. automodule:: redstone.auth
+   :members:
+   :undoc-members:
+
+   Members
+   =======
+
 :mod:`redstone.client` --- Redstone Service Clients
 ---------------------------------------------------
 
