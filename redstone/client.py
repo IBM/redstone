@@ -172,18 +172,16 @@ class IKS(BaseClient):
         will update to the latest 1.16.x series.
         """
 
-        """
-        PUT /v1/clusters/<cluster_name_or_id>/workers/<worker_name_or_id> HTTP/1.1
-        Host: containers.bluemix.net
-        Accept: application/json
-        Authorization: [PRIVATE DATA HIDDEN]
-        Content-Type: application/json
-        X-Region: au-syd
+        # PUT /v1/clusters/<cluster_name_or_id>/workers/<worker_name_or_id> HTTP/1.1
+        # Host: containers.bluemix.net
+        # Accept: application/json
+        # Authorization: [PRIVATE DATA HIDDEN]
+        # Content-Type: application/json
+        # X-Region: au-syd
 
-        {"action":"update"}
-        OR
-        {"action":"update", "force": true}
-        """
+        # {"action":"update"}
+        # OR
+        # {"action":"update", "force": true}
         # returns 204 No Content on success
 
         resp = self.session.put(
@@ -290,19 +288,21 @@ class IKS(BaseClient):
         return base64.b64encode(config_yaml)
 
 
-# FIXME(mrodden): currently this thing is hardcode to create KeyProtect instances only,
-# because i built all of this just for testing the keyprotect service...
 class ResourceController(BaseClient):
     """
+    Client class for interacting with the Resource Controller service,
+    which is used for managing service instances within the cloud account.
+
     API Docs:
       - https://console.bluemix.net/apidocs/resource-manager
       - https://console.bluemix.net/apidocs/resource-controller
     """
 
     names = ["rc"]
+    KEYPROTECT_PLAN_ID = "eedd3585-90c6-4c8f-be3d-062069e99fc3"  # keyprotect tiered-pricing ID
 
     def endpoint_for_region(self, region):
-        return "https://resource-controller.bluemix.net"
+        return "https://resource-controller.cloud.ibm.com"
 
     def get_default_resource_group(self):
         default_rg = next(
@@ -319,6 +319,8 @@ class ResourceController(BaseClient):
         return default_rg
 
     def resource_groups(self):
+        # resource-manager used to be independent when it was bluemix,
+        # but any recent endpoint will be the same for controller and manager
         if "bluemix" in self.endpoint_url:
             netloc = self.endpoint_url.replace("controller", "manager")
         else:
@@ -326,7 +328,7 @@ class ResourceController(BaseClient):
 
         # apparently it doesn't complain if we drop query params,
         # didn't want to have to look up the account ID anyway, so +2
-        resp = self.session.get("{0}/v1/resource_groups".format(netloc),)
+        resp = self.session.get("{0}/v2/resource_groups".format(netloc),)
 
         if resp.status_code != 200:
             raise Exception(
@@ -336,11 +338,15 @@ class ResourceController(BaseClient):
 
         return resp.json()
 
-    def create_instance(self, name, region=None, resource_group=None):
-        """Create/provision a service instance.
+    def create_instance(self, name, plan_id, region=None, resource_group=None):
+        """
+        Create/provision a service instance.
 
-        :returns: tuple of (service_GUID, service_CRN) if successful
-        :raises: Exception if there is an error
+        Returns:
+            tuple of (service_GUID, service_CRN) if successful
+
+        Raises:
+            Exception if there is an error
         """
 
         if resource_group is None:
@@ -351,15 +357,29 @@ class ResourceController(BaseClient):
         if not region:
             region = self.region
 
-        # TODO(mroddon): do global catalog lookup of service name and get price plans
-        # this is hardcoded to build KeyProtect instances right now... sorry :/
-        resource_plan_id = (
-            "eedd3585-90c6-4c8f-be3d-062069e99fc3"  # keyprotect tiered-pricing ID
+        return self._create_instance_v2(name, region, resource_group_id, plan_id)
+
+    def _create_instance_v2(self, name, region, resource_group_id, resource_plan_id):
+        body = {
+            "name": name,
+            "resource_plan_id": resource_plan_id,
+            "resource_group": resource_group_id,
+            "target": region,
+        }
+
+        resp = self.session.post(
+            "{0}/v2/resource_instances".format(self.endpoint_url), json=body
         )
 
-        return self._create_instance(name, region, resource_group_id, resource_plan_id)
+        if resp.status_code != 201:
+            raise Exception(
+                "Create instance failed: code=%d body=%s"
+                % (resp.status_code, resp.text)
+            )
 
-    def _create_instance(self, name, region, resource_group_id, resource_plan_id):
+        return resp.json().get("guid"), resp.json().get("id")
+
+    def _create_instance_v1(self, name, region, resource_group_id, resource_plan_id):
 
         # seems like the target_crn is the region selector, and its just the price plan ID with the region stuck at the end
         target_crn = "crn:v1:bluemix:public:globalcatalog::::deployment:{0}%3A{1}".format(
@@ -386,11 +406,11 @@ class ResourceController(BaseClient):
         return resp.json().get("guid"), resp.json().get("id")
 
     def delete_instance(self, instance_crn):
-        """Delete/deprovision a service instance identified by the given CRN."""
+        """Delete/deprovision a service instance identified by the given CRN or UUID."""
 
         safe_crn = urllib.parse.quote(instance_crn, "")
         resp = self.session.delete(
-            "{0}/v1/resource_instances/{1}".format(self.endpoint_url, safe_crn)
+            "{0}/v2/resource_instances/{1}".format(self.endpoint_url, safe_crn)
         )
 
         if resp.status_code != 204:
@@ -400,6 +420,16 @@ class ResourceController(BaseClient):
             )
 
     def list_instances(self):
+        """
+        Retrieve a list of all the service and resource instances in the current account.
+
+        Note this will return an iterator that will handle the underlying pagination of
+        large sets of instances returned.
+
+        Returns:
+            a generator type that iterates over the collection of instances returned from
+            the API request
+        """
         resp = self.session.get("{0}/v2/resource_instances".format(self.endpoint_url))
         resp.raise_for_status()
 
