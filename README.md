@@ -1,14 +1,13 @@
 # redstone - A Pythonic IBM Cloud SDK
 
 [![Documentation Status](https://readthedocs.org/projects/redstone-py/badge/?version=latest)](https://redstone-py.readthedocs.io/en/latest/?badge=latest)
-[![Gitter](https://badges.gitter.im/python-redstone/community.svg)](https://gitter.im/python-redstone/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
 Redstone is a Python library for interacting with IBM Cloud services.
 
 It currently includes support for IBM KeyProtect, IBM Kubernetes Service (IKS), and some
 platform services like ResourceController and IAM.
 
-Contributions in the form of feedback, patches, or bugs are appreciated. A [Gitter Channel](https://gitter.im/python-redstone/community?utm_source=share-link&utm_medium=link&utm_campaign=share-link) is available for questions and development discussion.
+Contributions in the form of feedback, patches, or bugs are appreciated. 
 
 
 * [Installation](#installation)
