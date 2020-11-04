@@ -536,7 +536,6 @@ class KeyProtect(BaseClient):
         return resp.json().get("resources")[0]
 
     def create(self, name, payload=None, raw_payload=None, root=False):
-
         data = {
             "metadata": {
                 "collectionType": "application/vnd.ibm.kms.key+json",
@@ -561,9 +560,29 @@ class KeyProtect(BaseClient):
         self._validate_resp(resp)
         return resp.json().get("resources")[0]
 
+    def get_key_metadata(self, key_id):
+        resp = self.session.get("%s/api/v2/keys/%s/metadata" % (self.endpoint_url, key_id))
+        self._validate_resp(resp)
+
+        return resp.json().get("resources")[0]
+
     def delete(self, key_id):
         resp = self.session.delete("%s/api/v2/keys/%s" % (self.endpoint_url, key_id))
         self._validate_resp(resp)
+
+    def restore(self, key_id, payload):
+        data = {
+            "metadata": {
+                "collectionType": "application/vnd.ibm.kms.key+json",
+                "collectionTotal": 1
+            },
+            "resources": [
+                {
+                    "payload": base64.b64encode(payload).decode("utf-8")
+                }
+            ]
+        }
+        return self._action(key_id, "restore", data)
 
     def _action(self, key_id, action, jsonable):
         resp = self.session.post(
@@ -572,7 +591,10 @@ class KeyProtect(BaseClient):
             json=jsonable,
         )
         self._validate_resp(resp)
-        return resp.json()
+        if resp.status_code == 204:
+            return "Success"
+        else:
+            return resp.json()
 
     def wrap(self, key_id, plaintext, aad=None):
         if plaintext:
@@ -598,6 +620,18 @@ class KeyProtect(BaseClient):
         resp = self._action(key_id, "unwrap", data)
         return base64.b64decode(resp["plaintext"].encode("utf-8"))
 
+    def rewrap(self, key_id, ciphertext, aad=None):
+        # json body needs to be a UTF-8 string
+        if isinstance(ciphertext, bytes):
+            ciphertext = ciphertext.decode("utf-8")
+
+        data = {"ciphertext": ciphertext}
+
+        if aad:
+            data["aad"] = aad
+
+        return self._action(key_id, "rewrap", data)
+
     def rotate(self, key_id, payload=None):
         data = None
         if payload:
@@ -605,6 +639,72 @@ class KeyProtect(BaseClient):
 
         return self._action(key_id, "rotate", data)
 
+    def set_key_for_delete(self, key_id):
+        # authorize deletion for a key with a dual authorization policy
+        resp = self.session.post("%s/api/v2/keys/%s/actions/setKeyForDeletion" % (self.endpoint_url, key_id))
+        self._validate_resp(resp)
+
+    def unset_key_for_delete(self, key_id):
+        # remove an authorization for a key with a dual authorization policy
+        resp = self.session.post("%s/api/v2/keys/%s/actions/unsetKeyForDeletion" % (self.endpoint_url, key_id))
+        self._validate_resp(resp)
+
+    def disable(self, key_id):
+        resp = self.session.post("%s/api/v2/keys/%s/actions/disable" % (self.endpoint_url, key_id))
+        self._validate_resp(resp)
+
+    def enable(self, key_id):
+        resp = self.session.post("%s/api/v2/keys/%s/actions/enable" % (self.endpoint_url, key_id))
+        self._validate_resp(resp)
+
+    def get_registrations(self, key_id, crn=None):
+        # retrieves a list of registrations that are associated with a specified root key.
+        params = {}
+        if crn is not None:
+            params["urlEncodedResourceCRNQuery"] = crn
+
+        resp = self.session.get(
+            "%s/api/v2/keys/%s/registrations" % (self.endpoint_url, key_id),
+            params=params
+        )
+
+        self._validate_resp(resp)
+        return resp.json()
+
+    def get_all_registrations(self, crn=None):
+        # retrieves a list of registrations that are protected by keys in your Key Protect service instance
+        params = {}
+        if crn is not None:
+            params["urlEncodedResourceCRNQuery"] = crn
+
+        resp = self.session.get(
+            "%s/api/v2/keys/registrations" % self.endpoint_url,
+            params=params
+        )
+
+        self._validate_resp(resp)
+        return resp.json()
+
+    def create_import_token(self, expiration=None, max_allowed_retrievals=None):
+        # creates an import token that you can use to encrypt and import root keys into the service
+        data = {}
+        if expiration:
+            data["expiration"] = float(expiration)
+        if max_allowed_retrievals:
+            data["maxAllowedRetrievals"] = float(max_allowed_retrievals)
+        resp = self.session.post(
+            "%s/api/v2/import_token" % self.endpoint_url,
+            json=data
+        )
+
+        self._validate_resp(resp)
+        return resp.json()
+
+    def get_import_token(self):
+        # retrieves the import token that is associated with your service instance
+        resp = self.session.get("%s/api/v2/import_token" % self.endpoint_url)
+        self._validate_resp(resp)
+        return resp.json()
 
 class CISAuth(requests.auth.AuthBase):
     def __init__(self, credentials):
