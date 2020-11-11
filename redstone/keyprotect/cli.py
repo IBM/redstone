@@ -18,6 +18,7 @@ import json
 import logging
 import os
 import sys
+from distutils import util
 
 import redstone
 
@@ -105,6 +106,36 @@ def _main():
 
     get_imp_token_p = subp.add_parser("get_import_token")
 
+    set_key_rotation_p = subp.add_parser("set_key_rotation_policy")
+    set_key_rotation_p.add_argument("key_id")
+    set_key_rotation_p.add_argument("rotation_interval")
+
+    set_key_dual_auth_p = subp.add_parser("set_key_dual_auth_policy")
+    set_key_dual_auth_p.add_argument("key_id")
+    set_key_dual_auth_p.add_argument("dual_auth_enable", type=lambda x: bool(util.strtobool(x)))
+
+    set_key_multiple_p = subp.add_parser("set_key_multiple_policies")
+    set_key_multiple_p.add_argument("key_id")
+    set_key_multiple_p.add_argument("--rotation_interval")
+    set_key_multiple_p.add_argument("--dual_auth_enable", type=lambda x: bool(util.strtobool(x)))
+
+    get_key_p = subp.add_parser("get_key_policies")
+    get_key_p.add_argument("key_id")
+
+    set_instance_dual_auth_p = subp.add_parser("set_instance_dual_auth_policy")
+    set_instance_dual_auth_p.add_argument("dual_auth_enable", type=lambda x: bool(util.strtobool(x)))
+
+    set_instance_allowed_network_p = subp.add_parser("set_instance_allowed_network_policy")
+    set_instance_allowed_network_p.add_argument("allowed_network_enable", type=lambda x: bool(util.strtobool(x)))
+    set_instance_allowed_network_p.add_argument("network_type")
+
+    set_instance_multiple_p = subp.add_parser("set_instance_multiple_policies")
+    set_instance_multiple_p.add_argument("--dual_auth_enable", type=lambda x: bool(util.strtobool(x)))
+    set_instance_multiple_p.add_argument("--allowed_network_enable", type=lambda x: bool(util.strtobool(x)))
+    set_instance_multiple_p.add_argument("--network_type")
+
+    get_instance_p = subp.add_parser("get_instance_policies")
+
     args = p.parse_args()
 
     if not args.action:
@@ -117,7 +148,7 @@ def _main():
         kms_instances = list(
             filter(
                 lambda x: x["type"] == "service_instance"
-                and x.get("sub_type") == "kms",
+                          and x.get("sub_type") == "kms",
                 instances,
             )
         )
@@ -136,7 +167,7 @@ def _main():
 
     instance_data = lookup_instance(instance_id)
     if not instance_data:
-        print("No instace found for ID: %s" % instance_id)
+        print("No instance found for ID: %s" % instance_id)
         return 1
 
     kp = redstone.service(
@@ -167,9 +198,10 @@ def _main():
         key_data = None
         if args.data:
             key_data = args.data
+        if isinstance(key_data, str):
+            key_data = key_data.encode('utf-8')
         key = kp.restore(key_id, payload=key_data)
         print("Restored key %s" % key_id)
-        pp_json(key)
 
     elif args.action == "wrap":
         plaintext = None
@@ -212,7 +244,7 @@ def _main():
             print("Disabled key %s" % key_id)
     elif args.action == "enable":
         for key_id in args.key_id:
-            resp = kp.enable(key_id)
+            kp.enable(key_id)
             print("Enabled key %s" % key_id)
     elif args.action == "get_registrations":
         crn = None
@@ -233,14 +265,49 @@ def _main():
             expiration = args.expiration
         if args.max_allowed_retrievals:
             max_allowed_retrievals = args.max_allowed_retrievals
-        res = kp.create_import_token(expiration, max_allowed_retrievals)
-        print(res)
+        resp = kp.create_import_token(expiration, max_allowed_retrievals)
+        pp_json(resp)
     elif args.action == "get_import_token":
-        res = kp.get_import_token()
-        print(res)
+        resp = kp.get_import_token()
+        pp_json(resp)
+    elif args.action == "set_key_rotation_policy":
+        key_id = args.key_id
+        resp = kp.set_key_rotation_policy(key_id, rotation_interval=args.rotation_interval)
+        pp_json(resp)
+    elif args.action == "set_key_dual_auth_policy":
+        key_id = args.key_id
+        resp = kp.set_key_dual_auth_policy(key_id, dual_auth_enable=args.dual_auth_enable)
+        pp_json(resp)
+    elif args.action == "set_key_multiple_policies":
+        if args.rotation_interval is None and args.dual_auth_enable is None:
+            p.error("One or both --rotation_interval and --dual_auth_enable should be provided")
+        key_id = args.key_id
+        resp = kp.set_key_multiple_policies(key_id, rotation_interval=args.rotation_interval,
+                                            dual_auth_enable=args.dual_auth_enable)
+        pp_json(resp)
+    elif args.action == "get_key_policies":
+        key_id = args.key_id
+        resp = kp.get_key_policies(key_id)
+        pp_json(resp)
+    elif args.action == "set_instance_dual_auth_policy":
+        resp = kp.set_instance_dual_auth_policy(dual_auth_enable=args.dual_auth_enable)
+        pp_json(resp)
+    elif args.action == "set_instance_allowed_network_policy":
+        resp = kp.set_instance_allowed_network_policy(allowed_network_enable=args.allowed_network_enable,
+                                                      network_type=args.network_type)
+        pp_json(resp)
+    elif args.action == "set_instance_multiple_policies":
+        if args.dual_auth_enable is None and args.allowed_network_enable is None:
+            p.error("One or both --dual_auth_enable and args.allowed_network_enable should be provided")
+        resp = kp.set_instance_multiple_policies(dual_auth_enable=args.dual_auth_enable,
+                                                 allowed_network_enable=args.allowed_network_enable,
+                                                 network_type=args.network_type)
+        pp_json(resp)
+    elif args.action == "get_instance_policies":
+        resp = kp.get_instance_policies()
+        pp_json(resp)
 
 def render_list(data, fields, titles):
-
     lengths = {}
 
     for datum in data:
