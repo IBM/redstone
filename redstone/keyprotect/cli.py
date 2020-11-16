@@ -133,8 +133,14 @@ def _main():
     set_instance_multiple_p.add_argument("--dual_auth_enable", type=lambda x: bool(util.strtobool(x)))
     set_instance_multiple_p.add_argument("--allowed_network_enable", type=lambda x: bool(util.strtobool(x)))
     set_instance_multiple_p.add_argument("--network_type")
+    set_instance_multiple_p.add_argument("--allowed_ip_enable", type=lambda x: bool(util.strtobool(x)))
+    set_instance_multiple_p.add_argument("--allowed_ips")
 
     get_instance_p = subp.add_parser("get_instance_policies")
+
+    set_instance_allowed_ip_p = subp.add_parser("set_instance_allowed_ip_policy")
+    set_instance_allowed_ip_p.add_argument("allowed_ip_enable", type=lambda x: bool(util.strtobool(x)))
+    set_instance_allowed_ip_p.add_argument("allowed_ips")
 
     args = p.parse_args()
 
@@ -296,16 +302,23 @@ def _main():
         resp = kp.set_instance_allowed_network_policy(allowed_network_enable=args.allowed_network_enable,
                                                       network_type=args.network_type)
         pp_json(resp)
+    elif args.action == "set_instance_allowed_ip_policy":
+        resp = kp.set_instance_allowed_ip_policy(allowed_ip_enable=args.allowed_ip_enable,
+                                                 allowed_ips=args.allowed_ips.split())
+        pp_json(resp)
     elif args.action == "set_instance_multiple_policies":
         if args.dual_auth_enable is None and args.allowed_network_enable is None:
             p.error("One or both --dual_auth_enable and args.allowed_network_enable should be provided")
         resp = kp.set_instance_multiple_policies(dual_auth_enable=args.dual_auth_enable,
                                                  allowed_network_enable=args.allowed_network_enable,
-                                                 network_type=args.network_type)
+                                                 network_type=args.network_type,
+                                                 allowed_ip_enable=args.allowed_ip_enable,
+                                                 allowed_ips=args.allowed_ips)
         pp_json(resp)
     elif args.action == "get_instance_policies":
         resp = kp.get_instance_policies()
         pp_json(resp)
+
 
 def render_list(data, fields, titles):
     lengths = {}

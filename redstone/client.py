@@ -755,24 +755,23 @@ class KeyProtect(BaseClient):
     def set_key_multiple_policies(self, key_id, rotation_interval=None, dual_auth_enable=None):
         # updates both rotation interval and dual auth delete policies of the key
         resources_list = []
-        if rotation_interval:
+        collection_total = 0
+        if rotation_interval is not None:
             resources_list.append({
                     "type": "application/vnd.ibm.kms.policy+json",
                     "rotation": {
                         "interval_month": int(rotation_interval),
                     }
                 })
-        if dual_auth_enable:
+            collection_total += 1
+        if dual_auth_enable is not None:
             resources_list.append({
                     "type": "application/vnd.ibm.kms.policy+json",
                     "dualAuthDelete": {
                         "enabled": dual_auth_enable
                     }
                 })
-        if rotation_interval is not None and dual_auth_enable is not None:
-            collection_total = 2
-        else:
-            collection_total = 1
+            collection_total += 1
         return self._set_policy(collection_total, resources_list, 'key', key_id)
 
     def get_key_policies(self, key_id):
@@ -793,7 +792,7 @@ class KeyProtect(BaseClient):
         return self._set_policy(1, resources_list, 'instance')
 
     def set_instance_allowed_network_policy(self, allowed_network_enable, network_type):
-        # updates the allowed network policy for the instance by passing in enable detail
+        # updates the allowed network policy for the instance
         resources_list = [{
             "policy_type": "allowedNetwork",
             "policy_data": {
@@ -805,9 +804,24 @@ class KeyProtect(BaseClient):
         }]
         return self._set_policy(1, resources_list, 'instance')
 
-    def set_instance_multiple_policies(self, dual_auth_enable=None, allowed_network_enable=None, network_type=None):
+    def set_instance_allowed_ip_policy(self, allowed_ip_enable, allowed_ips):
+        # updates the allowed ip policy for the instance
+        resources_list = [{
+            "policy_type": "allowedIP",
+            "policy_data": {
+                "enabled": allowed_ip_enable,
+                "attributes": {
+                    "allowed_ip": allowed_ips
+                }
+            }
+        }]
+        return self._set_policy(1, resources_list, 'instance')
+
+    def set_instance_multiple_policies(self, dual_auth_enable=None, allowed_network_enable=None, network_type=None,
+                                       allowed_ip_enable=None, allowed_ips=None):
         # updates policies for the instance
         resources_list = []
+        collection_total = 0
         if dual_auth_enable is not None:
             resources_list.append({
                     "policy_type": "dualAuthDelete",
@@ -815,6 +829,7 @@ class KeyProtect(BaseClient):
                         "enabled": dual_auth_enable
                     }
                 })
+            collection_total += 1
         if allowed_network_enable is not None:
             resources_list.append({
                     "policy_type": "allowedNetwork",
@@ -825,10 +840,19 @@ class KeyProtect(BaseClient):
                         }
                     }
                 })
-        if dual_auth_enable is not None and allowed_network_enable is not None:
-            collection_total = 2
-        else:
-            collection_total = 1
+            collection_total += 1
+        if allowed_ip_enable is not None:
+            resources_list.append({
+                    "policy_type": "allowedIP",
+                    "policy_data": {
+                        "enabled": allowed_ip_enable,
+                        "attributes": {
+                            "allowed_ip": allowed_ips.split()
+                        }
+                    }
+                })
+            collection_total += 1
+
         return self._set_policy(collection_total, resources_list, 'instance')
 
     def get_instance_policies(self):
