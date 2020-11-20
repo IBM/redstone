@@ -18,7 +18,6 @@ import json
 import logging
 import os
 import sys
-from distutils import util
 
 import redstone
 
@@ -50,12 +49,10 @@ def _main():
 
     gp = subp.add_parser("get")
     gp.add_argument("key_id")
+    gp.add_argument("--only-metadata", action="store_true")
 
     dp = subp.add_parser("delete")
     dp.add_argument("key_id", nargs="+")
-
-    gmp = subp.add_parser("get_metadata")
-    gmp.add_argument("key_id")
 
     rsp = subp.add_parser("restore")
     rsp.add_argument("key_id")
@@ -81,65 +78,53 @@ def _main():
     rotate_p.add_argument("key_id")
     rotate_p.add_argument("--data")
 
-    set_delete_p = subp.add_parser("set_key_for_delete")
-    set_delete_p.add_argument("key_id", nargs="+")
+    set_key_for_delete_p = subp.add_parser("set-key-for-delete")
+    set_key_for_delete_p.add_argument("key_id", nargs="+")
 
-    unset_delete_p = subp.add_parser("unset_key_for_delete")
-    unset_delete_p.add_argument("key_id", nargs="+")
+    unset_key_for_delete_p = subp.add_parser("unset-key-for-delete")
+    unset_key_for_delete_p.add_argument("key_id", nargs="+")
 
-    disable_p = subp.add_parser("disable")
-    disable_p.add_argument("key_id", nargs="+")
+    disable_key_p = subp.add_parser("disable-key")
+    disable_key_p.add_argument("key_id", nargs="+")
 
-    enable_p = subp.add_parser("enable")
-    enable_p.add_argument("key_id", nargs="+")
+    enable_key_p = subp.add_parser("enable-key")
+    enable_key_p.add_argument("key_id", nargs="+")
 
-    get_reg_p = subp.add_parser("get_registrations")
-    get_reg_p.add_argument("key_id")
-    get_reg_p.add_argument("--crn")
+    get_registrations_p = subp.add_parser("get-registrations")
+    get_registrations_p.add_argument("--key-id")
+    get_registrations_p.add_argument("--crn")
 
-    get_all_reg_p = subp.add_parser("get_all_registrations")
-    get_all_reg_p.add_argument("--crn")
+    create_import_token_p = subp.add_parser("create-import-token")
+    create_import_token_p.add_argument("--expiration", type=int)
+    create_import_token_p.add_argument("--max-allowed-retrievals", type=int)
 
-    create_imp_token_p = subp.add_parser("create_import_token")
-    create_imp_token_p.add_argument("--expiration")
-    create_imp_token_p.add_argument("--max_allowed_retrievals")
+    get_imp_token_p = subp.add_parser("get-import-token")
 
-    get_imp_token_p = subp.add_parser("get_import_token")
-
-    set_key_rotation_p = subp.add_parser("set_key_rotation_policy")
+    set_key_rotation_p = subp.add_parser("set-key-rotation-policy")
     set_key_rotation_p.add_argument("key_id")
-    set_key_rotation_p.add_argument("rotation_interval")
+    set_key_rotation_p.add_argument("rotation_interval", type=int)
 
-    set_key_dual_auth_p = subp.add_parser("set_key_dual_auth_policy")
+    set_key_dual_auth_p = subp.add_parser("set-key-dual-auth-policy")
     set_key_dual_auth_p.add_argument("key_id")
-    set_key_dual_auth_p.add_argument("dual_auth_enable", type=lambda x: bool(util.strtobool(x)))
+    set_key_dual_auth_p.add_argument("--enable", default=True, action='store_true')
 
-    set_key_multiple_p = subp.add_parser("set_key_multiple_policies")
-    set_key_multiple_p.add_argument("key_id")
-    set_key_multiple_p.add_argument("--rotation_interval")
-    set_key_multiple_p.add_argument("--dual_auth_enable", type=lambda x: bool(util.strtobool(x)))
-
-    get_key_p = subp.add_parser("get_key_policies")
+    get_key_p = subp.add_parser("get-key-policies")
     get_key_p.add_argument("key_id")
 
-    set_instance_dual_auth_p = subp.add_parser("set_instance_dual_auth_policy")
-    set_instance_dual_auth_p.add_argument("dual_auth_enable", type=lambda x: bool(util.strtobool(x)))
+    set_instance_dual_auth_p = subp.add_parser("set-instance-dual-auth-policy")
+    set_instance_dual_auth_p.add_argument("--enable", default=True, action='store_true')
+    set_instance_dual_auth_p.add_argument("--no-enable", dest='enable', action='store_false')
 
-    set_instance_allowed_network_p = subp.add_parser("set_instance_allowed_network_policy")
-    set_instance_allowed_network_p.add_argument("allowed_network_enable", type=lambda x: bool(util.strtobool(x)))
+    set_instance_allowed_network_p = subp.add_parser("set-instance-allowed-network-policy")
+    set_instance_allowed_network_p.add_argument("--enable", default=True, action='store_true')
+    set_instance_allowed_network_p.add_argument("--no-enable", dest='enable', action='store_false')
     set_instance_allowed_network_p.add_argument("network_type")
 
-    set_instance_multiple_p = subp.add_parser("set_instance_multiple_policies")
-    set_instance_multiple_p.add_argument("--dual_auth_enable", type=lambda x: bool(util.strtobool(x)))
-    set_instance_multiple_p.add_argument("--allowed_network_enable", type=lambda x: bool(util.strtobool(x)))
-    set_instance_multiple_p.add_argument("--network_type")
-    set_instance_multiple_p.add_argument("--allowed_ip_enable", type=lambda x: bool(util.strtobool(x)))
-    set_instance_multiple_p.add_argument("--allowed_ips")
+    get_instance_p = subp.add_parser("get-instance-policies")
 
-    get_instance_p = subp.add_parser("get_instance_policies")
-
-    set_instance_allowed_ip_p = subp.add_parser("set_instance_allowed_ip_policy")
-    set_instance_allowed_ip_p.add_argument("allowed_ip_enable", type=lambda x: bool(util.strtobool(x)))
+    set_instance_allowed_ip_p = subp.add_parser("set-instance-allowed-ip-policy")
+    set_instance_allowed_ip_p.add_argument("--enable", default=True, action='store_true')
+    set_instance_allowed_ip_p.add_argument("--no-enable", dest='enable', action='store_false')
     set_instance_allowed_ip_p.add_argument("allowed_ips")
 
     args = p.parse_args()
@@ -190,7 +175,10 @@ def _main():
         key = kp.create(args.name, raw_payload=key_data, root=not args.exportable)
         pp_json(key)
     elif args.action == "get":
-        key = kp.get(args.key_id)
+        only_metadata = None
+        if args.only_metadata:
+            only_metadata = args.only_metadata
+        key = kp.get(args.key_id, only_metadata=only_metadata)
         pp_json(key)
     elif args.action == "get_metadata":
         key = kp.get_key_metadata(args.key_id)
@@ -225,46 +213,43 @@ def _main():
         res = kp.unwrap(args.key_id, data, args.aad)
         print(base64.b64encode(res).decode())
     elif args.action == "rewrap":
-        plaintext = None
+        ciphertext = None
         if args.data:
-            plaintext = args.data.encode()
-        resp = kp.rewrap(args.key_id, plaintext, args.aad)
+            ciphertext = args.data.encode()
+        resp = kp.rewrap(args.key_id, ciphertext, args.aad)
         pp_json(resp)
     elif args.action == "rotate":
         new_key_data = None
         if args.data:
             new_key_data = args.data.encode()
-        res = kp.rotate(args.key_id, new_key_data)
-        print(res)
-    elif args.action == "set_key_for_delete":
+        kp.rotate(args.key_id, new_key_data)
+        print("Rotated key %s" % args.key_id)
+    elif args.action == "set-key-for-delete":
         for key_id in args.key_id:
             kp.set_key_for_delete(key_id)
             print("Set key %s for delete" % key_id)
-    elif args.action == "unset_key_for_delete":
+    elif args.action == "unset-key-for-delete":
         for key_id in args.key_id:
             kp.unset_key_for_delete(key_id)
             print("Unset key %s for delete" % key_id)
-    elif args.action == "disable":
+    elif args.action == "disable-key":
         for key_id in args.key_id:
-            kp.disable(key_id)
+            kp.disable_key(key_id)
             print("Disabled key %s" % key_id)
-    elif args.action == "enable":
+    elif args.action == "enable-key":
         for key_id in args.key_id:
-            kp.enable(key_id)
+            kp.enable_key(key_id)
             print("Enabled key %s" % key_id)
-    elif args.action == "get_registrations":
+    elif args.action == "get-registrations":
         crn = None
+        key_id = None
+        if args.key_id:
+            key_id = args.key_id
         if args.crn:
             crn = args.crn.encode()
-        registrations = kp.get_registrations(args.key_id, crn)
+        registrations = kp.get_registrations(key_id, crn)
         pp_json(registrations)
-    elif args.action == "get_all_registrations":
-        crn = None
-        if args.crn:
-            crn = args.crn.encode()
-        all_registrations = kp.get_all_registrations(crn)
-        pp_json(all_registrations)
-    elif args.action == "create_import_token":
+    elif args.action == "create-import-token":
         expiration = None
         max_allowed_retrievals = None
         if args.expiration:
@@ -273,49 +258,30 @@ def _main():
             max_allowed_retrievals = args.max_allowed_retrievals
         resp = kp.create_import_token(expiration, max_allowed_retrievals)
         pp_json(resp)
-    elif args.action == "get_import_token":
+    elif args.action == "get-import-token":
         resp = kp.get_import_token()
         pp_json(resp)
-    elif args.action == "set_key_rotation_policy":
+    elif args.action == "set-key-rotation-policy":
         key_id = args.key_id
         resp = kp.set_key_rotation_policy(key_id, rotation_interval=args.rotation_interval)
         pp_json(resp)
-    elif args.action == "set_key_dual_auth_policy":
+    elif args.action == "set-key-dual-auth-policy":
         key_id = args.key_id
-        resp = kp.set_key_dual_auth_policy(key_id, dual_auth_enable=args.dual_auth_enable)
+        resp = kp.set_key_dual_auth_policy(key_id, dual_auth_enable=args.enable)
         pp_json(resp)
-    elif args.action == "set_key_multiple_policies":
-        if args.rotation_interval is None and args.dual_auth_enable is None:
-            p.error("One or both --rotation_interval and --dual_auth_enable should be provided")
-        key_id = args.key_id
-        resp = kp.set_key_multiple_policies(key_id, rotation_interval=args.rotation_interval,
-                                            dual_auth_enable=args.dual_auth_enable)
-        pp_json(resp)
-    elif args.action == "get_key_policies":
+    elif args.action == "get-key-policies":
         key_id = args.key_id
         resp = kp.get_key_policies(key_id)
         pp_json(resp)
-    elif args.action == "set_instance_dual_auth_policy":
-        resp = kp.set_instance_dual_auth_policy(dual_auth_enable=args.dual_auth_enable)
-        pp_json(resp)
-    elif args.action == "set_instance_allowed_network_policy":
-        resp = kp.set_instance_allowed_network_policy(allowed_network_enable=args.allowed_network_enable,
-                                                      network_type=args.network_type)
-        pp_json(resp)
-    elif args.action == "set_instance_allowed_ip_policy":
-        resp = kp.set_instance_allowed_ip_policy(allowed_ip_enable=args.allowed_ip_enable,
-                                                 allowed_ips=args.allowed_ips.split())
-        pp_json(resp)
-    elif args.action == "set_instance_multiple_policies":
-        if args.dual_auth_enable is None and args.allowed_network_enable is None:
-            p.error("One or both --dual_auth_enable and args.allowed_network_enable should be provided")
-        resp = kp.set_instance_multiple_policies(dual_auth_enable=args.dual_auth_enable,
-                                                 allowed_network_enable=args.allowed_network_enable,
-                                                 network_type=args.network_type,
-                                                 allowed_ip_enable=args.allowed_ip_enable,
-                                                 allowed_ips=args.allowed_ips)
-        pp_json(resp)
-    elif args.action == "get_instance_policies":
+    elif args.action == "set-instance-dual-auth-policy":
+        kp.set_instance_dual_auth_policy(dual_auth_enable=args.enable)
+    elif args.action == "set-instance-allowed-network-policy":
+        kp.set_instance_allowed_network_policy(allowed_network_enable=args.enable,
+                                               network_type=args.network_type)
+    elif args.action == "set-instance-allowed-ip-policy":
+        kp.set_instance_allowed_ip_policy(allowed_ip_enable=args.enable,
+                                          allowed_ips=args.allowed_ips.split())
+    elif args.action == "get-instance-policies":
         resp = kp.get_instance_policies()
         pp_json(resp)
 

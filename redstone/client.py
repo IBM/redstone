@@ -528,11 +528,12 @@ class KeyProtect(BaseClient):
 
         return resp.json().get("resources", [])
 
-    def get(self, key_id):
-        resp = self.session.get("%s/api/v2/keys/%s" % (self.endpoint_url, key_id))
-
+    def get(self, key_id, only_metadata=False):
+        if not only_metadata:
+            resp = self.session.get("%s/api/v2/keys/%s" % (self.endpoint_url, key_id))
+        else:
+            resp = self.session.get("%s/api/v2/keys/%s/metadata" % (self.endpoint_url, key_id))
         self._validate_resp(resp)
-
         return resp.json().get("resources")[0]
 
     def create(self, name, payload=None, raw_payload=None, root=False):
@@ -560,17 +561,11 @@ class KeyProtect(BaseClient):
         self._validate_resp(resp)
         return resp.json().get("resources")[0]
 
-    def get_key_metadata(self, key_id):
-        resp = self.session.get("%s/api/v2/keys/%s/metadata" % (self.endpoint_url, key_id))
-        self._validate_resp(resp)
-
-        return resp.json().get("resources")[0]
-
     def delete(self, key_id):
         resp = self.session.delete("%s/api/v2/keys/%s" % (self.endpoint_url, key_id))
         self._validate_resp(resp)
 
-    def restore(self, key_id, payload):
+    def restore(self, key_id: str, payload: bytes):
         data = {
             "metadata": {
                 "collectionType": "application/vnd.ibm.kms.key+json",
@@ -592,7 +587,7 @@ class KeyProtect(BaseClient):
         )
         self._validate_resp(resp)
         if resp.status_code == 204:
-            return "Success"
+            return
         else:
             return resp.json()
 
@@ -620,7 +615,8 @@ class KeyProtect(BaseClient):
         resp = self._action(key_id, "unwrap", data)
         return base64.b64decode(resp["plaintext"].encode("utf-8"))
 
-    def rewrap(self, key_id, ciphertext, aad=None):
+    def rewrap(self, key_id: str, ciphertext: str, aad: str = None):
+        """Use a root key to rewrap or reencrypt a data encryption key"""
         # json body needs to be a UTF-8 string
         if isinstance(ciphertext, bytes):
             ciphertext = ciphertext.decode("utf-8")
@@ -632,61 +628,61 @@ class KeyProtect(BaseClient):
 
         return self._action(key_id, "rewrap", data)
 
-    def rotate(self, key_id, payload=None):
+    def rotate(self, key_id: str, payload: bytes = None):
+        """Create a new version of a root key"""
         data = None
         if payload:
             data = {"payload": base64.b64encode(payload).decode("utf-8")}
 
         return self._action(key_id, "rotate", data)
 
-    def set_key_for_delete(self, key_id):
-        # authorize deletion for a key with a dual authorization policy
+    def set_key_for_delete(self, key_id: str):
+        """Authorize deletion for a key with a dual authorization policy"""
         resp = self.session.post("%s/api/v2/keys/%s/actions/setKeyForDeletion" % (self.endpoint_url, key_id))
         self._validate_resp(resp)
 
-    def unset_key_for_delete(self, key_id):
-        # remove an authorization for a key with a dual authorization policy
+    def unset_key_for_delete(self, key_id: str):
+        """Remove an authorization for a key with a dual authorization policy"""
         resp = self.session.post("%s/api/v2/keys/%s/actions/unsetKeyForDeletion" % (self.endpoint_url, key_id))
         self._validate_resp(resp)
 
-    def disable(self, key_id):
+    def disable_key(self, key_id: str):
+        """Disable operations for a key"""
         resp = self.session.post("%s/api/v2/keys/%s/actions/disable" % (self.endpoint_url, key_id))
         self._validate_resp(resp)
 
-    def enable(self, key_id):
+    def enable_key(self, key_id: str):
+        """Enable operations for a key"""
         resp = self.session.post("%s/api/v2/keys/%s/actions/enable" % (self.endpoint_url, key_id))
         self._validate_resp(resp)
 
-    def get_registrations(self, key_id, crn=None):
-        # retrieves a list of registrations that are associated with a specified root key.
+    def get_registrations(self, key_id: str = None, crn: str = None):
+        """
+        Retrieve a list of registrations
+
+        If `key_id` is None (the default) all registrations for the instance are returned, otherwise
+        only the registrations associated with a specified root key are returned.
+        """
         params = {}
         if crn is not None:
             params["urlEncodedResourceCRNQuery"] = crn
 
+        if key_id is not None:
+            url = "%s/api/v2/keys/%s/registrations" % (self.endpoint_url, key_id)
+        else:
+            url = "%s/api/v2/keys/registrations" % self.endpoint_url
+
         resp = self.session.get(
-            "%s/api/v2/keys/%s/registrations" % (self.endpoint_url, key_id),
+            url,
             params=params
         )
 
         self._validate_resp(resp)
         return resp.json()
 
-    def get_all_registrations(self, crn=None):
-        # retrieves a list of registrations that are protected by keys in your Key Protect service instance
-        params = {}
-        if crn is not None:
-            params["urlEncodedResourceCRNQuery"] = crn
+    def create_import_token(self, expiration: int = None, max_allowed_retrievals: int = None):
+        """Create an import token that can be used to import encrypted material as root keys."""
 
-        resp = self.session.get(
-            "%s/api/v2/keys/registrations" % self.endpoint_url,
-            params=params
-        )
-
-        self._validate_resp(resp)
-        return resp.json()
-
-    def create_import_token(self, expiration=None, max_allowed_retrievals=None):
-        # creates an import token that you can use to encrypt and import root keys into the service
         data = {}
         if expiration:
             data["expiration"] = float(expiration)
@@ -701,7 +697,9 @@ class KeyProtect(BaseClient):
         return resp.json()
 
     def get_import_token(self):
-        # retrieves the import token that is associated with your service instance
+        """Retrieves an import token associated with the current service instance. Token must be previously created by
+        a create import token call."""
+
         resp = self.session.get("%s/api/v2/import_token" % self.endpoint_url)
         self._validate_resp(resp)
         return resp.json()
@@ -726,12 +724,12 @@ class KeyProtect(BaseClient):
             )
         self._validate_resp(resp)
         if resp.status_code == 204:
-            return "Success"
+            return
         else:
             return resp.json()
 
-    def set_key_rotation_policy(self, key_id, rotation_interval):
-        # updates the rotation policy associated with a key by specifying key ID and rotation interval
+    def set_key_rotation_policy(self, key_id: str, rotation_interval: int):
+        """Updates the rotation policy associated with a key by specifying key ID and rotation interval"""
         resources_list = [{
             "type": "application/vnd.ibm.kms.policy+json",
             "rotation": {
@@ -741,8 +739,8 @@ class KeyProtect(BaseClient):
         ]
         return self._set_policy(1, resources_list, 'key', key_id)
 
-    def set_key_dual_auth_policy(self, key_id, dual_auth_enable):
-        # updates the dual auth delete policy by passing the key ID and enable detail
+    def set_key_dual_auth_policy(self, key_id: str, dual_auth_enable: bool):
+        """Updates the dual auth delete policy by passing the key ID and enable detail"""
         resources_list = [{
             "type": "application/vnd.ibm.kms.policy+json",
             "dualAuthDelete": {
@@ -752,36 +750,14 @@ class KeyProtect(BaseClient):
         ]
         return self._set_policy(1, resources_list, 'key', key_id)
 
-    def set_key_multiple_policies(self, key_id, rotation_interval=None, dual_auth_enable=None):
-        # updates both rotation interval and dual auth delete policies of the key
-        resources_list = []
-        collection_total = 0
-        if rotation_interval is not None:
-            resources_list.append({
-                    "type": "application/vnd.ibm.kms.policy+json",
-                    "rotation": {
-                        "interval_month": int(rotation_interval),
-                    }
-                })
-            collection_total += 1
-        if dual_auth_enable is not None:
-            resources_list.append({
-                    "type": "application/vnd.ibm.kms.policy+json",
-                    "dualAuthDelete": {
-                        "enabled": dual_auth_enable
-                    }
-                })
-            collection_total += 1
-        return self._set_policy(collection_total, resources_list, 'key', key_id)
-
-    def get_key_policies(self, key_id):
-        # retrieves a list of policies that are associated with a specified key
+    def get_key_policies(self, key_id: str):
+        """Retrieves a list of policies that are associated with a specified key"""
         resp = self.session.get("%s/api/v2/keys/%s/policies" % (self.endpoint_url, key_id))
         self._validate_resp(resp)
         return resp.json()
 
-    def set_instance_dual_auth_policy(self, dual_auth_enable):
-        # updates the dual auth delete policy for the instance by passing enable detail
+    def set_instance_dual_auth_policy(self, dual_auth_enable: bool):
+        """Updates the dual auth delete policy for the instance by passing enable detail"""
         resources_list = [{
             "policy_type": "dualAuthDelete",
             "policy_data": {
@@ -791,8 +767,8 @@ class KeyProtect(BaseClient):
         ]
         return self._set_policy(1, resources_list, 'instance')
 
-    def set_instance_allowed_network_policy(self, allowed_network_enable, network_type):
-        # updates the allowed network policy for the instance
+    def set_instance_allowed_network_policy(self, allowed_network_enable: bool, network_type: str):
+        """Updates the allowed network policy for the instance"""
         resources_list = [{
             "policy_type": "allowedNetwork",
             "policy_data": {
@@ -804,8 +780,8 @@ class KeyProtect(BaseClient):
         }]
         return self._set_policy(1, resources_list, 'instance')
 
-    def set_instance_allowed_ip_policy(self, allowed_ip_enable, allowed_ips):
-        # updates the allowed ip policy for the instance
+    def set_instance_allowed_ip_policy(self, allowed_ip_enable: bool, allowed_ips: List[str]):
+        """Updates the allowed ip policy for the instance"""
         resources_list = [{
             "policy_type": "allowedIP",
             "policy_data": {
@@ -817,46 +793,8 @@ class KeyProtect(BaseClient):
         }]
         return self._set_policy(1, resources_list, 'instance')
 
-    def set_instance_multiple_policies(self, dual_auth_enable=None, allowed_network_enable=None, network_type=None,
-                                       allowed_ip_enable=None, allowed_ips=None):
-        # updates policies for the instance
-        resources_list = []
-        collection_total = 0
-        if dual_auth_enable is not None:
-            resources_list.append({
-                    "policy_type": "dualAuthDelete",
-                    "policy_data": {
-                        "enabled": dual_auth_enable
-                    }
-                })
-            collection_total += 1
-        if allowed_network_enable is not None:
-            resources_list.append({
-                    "policy_type": "allowedNetwork",
-                    "policy_data": {
-                        "enabled": allowed_network_enable,
-                        "attributes": {
-                            "allowed_network": network_type
-                        }
-                    }
-                })
-            collection_total += 1
-        if allowed_ip_enable is not None:
-            resources_list.append({
-                    "policy_type": "allowedIP",
-                    "policy_data": {
-                        "enabled": allowed_ip_enable,
-                        "attributes": {
-                            "allowed_ip": allowed_ips.split()
-                        }
-                    }
-                })
-            collection_total += 1
-
-        return self._set_policy(collection_total, resources_list, 'instance')
-
     def get_instance_policies(self):
-        # retrieves a list of policies that are associated with a specified service instance
+        """Retrieves a list of policies that are associated with a specified service instance"""
         resp = self.session.get("%s/api/v2/instance/policies" % (self.endpoint_url))
         self._validate_resp(resp)
         return resp.json()
