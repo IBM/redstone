@@ -719,6 +719,32 @@ class KeyProtect(BaseClient):
         self._validate_resp(resp)
         return resp.json()
 
+    def create_key_alias(self, key_id: str, alias: str):
+        """
+        Creates an alias name for a key.
+        An alias is a user defined string that can be used in place of a normal UUID Key ID
+
+        API Docs: https://cloud.ibm.com/apidocs/key-protect#createkeyalias
+        """
+
+        resp = self.session.post(
+            "%s/api/v2/keys/%s/aliases/%s" % (self.endpoint_url, key_id, alias)
+        )
+        self._validate_resp(resp)
+        return resp.json()
+
+    def delete_key_alias(self, key_id: str, alias: str):
+        """
+        Deletes an alias name associated with a key
+
+        API Docs: https://cloud.ibm.com/apidocs/key-protect#deletekeyalias
+        """
+
+        resp = self.session.delete(
+            "%s/api/v2/keys/%s/aliases/%s" % (self.endpoint_url, key_id, alias)
+        )
+        self._validate_resp(resp)
+
     # deprecated methods
     keys = list_keys
     get = get_key
