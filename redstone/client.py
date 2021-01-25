@@ -605,6 +605,101 @@ class KeyProtect(BaseClient):
 
         return self._action(key_id, "rotate", data)
 
+    def _set_policy(self, collection_total, resources_list, key_or_instance, key_id=None):
+        data = {
+            "metadata": {
+                "collectionType": "application/vnd.ibm.kms.policy+json",
+                "collectionTotal": collection_total,
+            },
+            "resources": resources_list
+        }
+        if key_or_instance == 'instance':
+            resp = self.session.put(
+                "%s/api/v2/instance/policies" % (self.endpoint_url),
+                json=data
+            )
+        else:
+            resp = self.session.put(
+                "%s/api/v2/keys/%s/policies" % (self.endpoint_url, key_id),
+                json=data
+            )
+        self._validate_resp(resp)
+        if resp.status_code == 204:
+            return
+        else:
+            return resp.json()
+
+    def set_key_rotation_policy(self, key_id: str, rotation_interval: int):
+        """Updates the rotation policy associated with a key by specifying key ID and rotation interval"""
+        resources_list = [{
+            "type": "application/vnd.ibm.kms.policy+json",
+            "rotation": {
+                "interval_month": int(rotation_interval),
+            }
+        }
+        ]
+        return self._set_policy(1, resources_list, 'key', key_id)
+
+    def set_key_dual_auth_policy(self, key_id: str, dual_auth_enable: bool):
+        """Updates the dual auth delete policy by passing the key ID and enable detail"""
+        resources_list = [{
+            "type": "application/vnd.ibm.kms.policy+json",
+            "dualAuthDelete": {
+                "enabled": dual_auth_enable
+            }
+        }
+        ]
+        return self._set_policy(1, resources_list, 'key', key_id)
+
+    def get_key_policies(self, key_id: str):
+        """Retrieves a list of policies that are associated with a specified key"""
+        resp = self.session.get("%s/api/v2/keys/%s/policies" % (self.endpoint_url, key_id))
+        self._validate_resp(resp)
+        return resp.json()
+
+    def set_instance_dual_auth_policy(self, dual_auth_enable: bool):
+        """Updates the dual auth delete policy for the instance by passing the enable detail"""
+        resources_list = [{
+            "policy_type": "dualAuthDelete",
+            "policy_data": {
+                "enabled": dual_auth_enable
+            }
+        }
+        ]
+        return self._set_policy(1, resources_list, 'instance')
+
+    def set_instance_allowed_network_policy(self, allowed_network_enable: bool, network_type: str):
+        """Updates the allowed network policy for the instance"""
+        resources_list = [{
+            "policy_type": "allowedNetwork",
+            "policy_data": {
+                "enabled": allowed_network_enable,
+                "attributes": {
+                    "allowed_network": network_type
+                }
+            }
+        }]
+        return self._set_policy(1, resources_list, 'instance')
+
+    def set_instance_allowed_ip_policy(self, allowed_ip_enable: bool, allowed_ips: List[str]):
+        """Updates the allowed ip policy for the instance"""
+        resources_list = [{
+            "policy_type": "allowedIP",
+            "policy_data": {
+                "enabled": allowed_ip_enable,
+                "attributes": {
+                    "allowed_ip": allowed_ips
+                }
+            }
+        }]
+        return self._set_policy(1, resources_list, 'instance')
+
+    def get_instance_policies(self):
+        """Retrieves a list of policies that are associated with a specified service instance"""
+        resp = self.session.get("%s/api/v2/instance/policies" % (self.endpoint_url))
+        self._validate_resp(resp)
+        return resp.json()
+
 
 class CISAuth(requests.auth.AuthBase):
     def __init__(self, credentials):
