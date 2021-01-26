@@ -87,6 +87,21 @@ class KeyProtectTestCase(unittest.TestCase):
         resp = self.kp.delete_key_alias(self.key["id"], "testKeyAlias")
         self.assertEqual(resp, None)
 
+    def test_get_registrations(self):
+        # create a key to be used for test
+        self.key = self.kp.create(name="test-key", root=True)
+        self.addCleanup(self.kp.delete, self.key.get("id"))
+
+        # get registrations associated with a key
+        resp1 = self.kp.get_registrations(self.key["id"])
+        self.assertEqual(resp1["metadata"]["collectionTotal"], 0)
+
+        #  get registrations associated with an instance
+        resp2 = self.kp.get_registrations()
+        self.assertGreaterEqual(
+            resp2["metadata"]["collectionTotal"], resp1["metadata"]["collectionTotal"]
+        )
+
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
