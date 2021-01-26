@@ -605,6 +605,31 @@ class KeyProtect(BaseClient):
 
         return self._action(key_id, "rotate", data)
 
+    def get_registrations(self, key_id: str = None, crn: str = None):
+        """
+        Retrieve a list of registrations
+
+        If `key_id` is None (the default) all registrations for the instance are
+        returned, otherwise only the registrations associated with a specified root
+        key are returned.
+        """
+        params = {}
+        if crn is not None:
+            params["urlEncodedResourceCRNQuery"] = crn
+
+        if key_id is not None:
+            url = "%s/api/v2/keys/%s/registrations" % (self.endpoint_url, key_id)
+        else:
+            url = "%s/api/v2/keys/registrations" % self.endpoint_url
+
+        resp = self.session.get(
+            url,
+            params=params
+        )
+
+        self._validate_resp(resp)
+        return resp.json()
+
 
 class CISAuth(requests.auth.AuthBase):
     def __init__(self, credentials):
