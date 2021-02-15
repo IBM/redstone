@@ -612,6 +612,9 @@ class KeyProtect(BaseClient):
         If `key_id` is None (the default) all registrations for the instance are
         returned, otherwise only the registrations associated with a specified root
         key are returned.
+
+        API Docs: https://cloud.ibm.com/apidocs/key-protect#getregistrations
+                  https://cloud.ibm.com/apidocs/key-protect#getregistrationsallkeys
         """
         params = {}
         if crn is not None:
