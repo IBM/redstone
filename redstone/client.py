@@ -605,6 +605,33 @@ class KeyProtect(BaseClient):
 
         return self._action(key_id, "rotate", data)
 
+    def create_key_ring(self, instance_id: str, key_ring_id: str):
+        """Creates a key ring in the specified instance"""
+        resp = self.session.post(
+            "%s/api/v2/key_rings/%s" % (self.endpoint_url, key_ring_id),
+            json={"bluemix-instance": instance_id}
+        )
+        self._validate_resp(resp)
+        return resp.status_code
+
+    def get_key_rings(self, instance_id: str):
+        """Get key rings associated with specified instance"""
+        resp = self.session.get(
+            "%s/api/v2/key_rings" % self.endpoint_url,
+            json={"bluemix-instance": instance_id}
+        )
+        self._validate_resp(resp)
+        return resp.json()
+
+    def delete_key_ring(self, instance_id: str, key_ring_id: str):
+        """Deletes a key ring from the associated instance"""
+        resp = self.session.delete(
+            "%s/api/v2/key_rings/%s" % (self.endpoint_url, key_ring_id),
+            json={"bluemix-instance": instance_id}
+        )
+        self._validate_resp(resp)
+        return resp.status_code
+
 
 class CISAuth(requests.auth.AuthBase):
     def __init__(self, credentials):
