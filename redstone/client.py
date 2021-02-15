@@ -680,6 +680,45 @@ class KeyProtect(BaseClient):
         )
         self._validate_resp(resp)
 
+    def create_import_token(
+        self, expiration: int = None, max_allowed_retrievals: int = None
+    ):
+        """
+        Create an import token that can be used to import encrypted material as root keys.
+
+        expiration: The time in seconds from the creation of a import token that determines how long it remains valid.
+            The minimum value is 300 seconds (5 minutes), and the maximum value is 86400 (24 hours). The default value
+            is 600 (10 minutes).
+        max_allowed_retrievals: The number of times that an import token can be retrieved within its expiration time
+            before it is no longer accessible. The default value is 1. The maximum value is 500.
+
+        API Docs: https://cloud.ibm.com/apidocs/key-protect#postimporttoken
+        """
+
+        data = {}
+        if expiration:
+            data["expiration"] = expiration
+        if max_allowed_retrievals:
+            data["maxAllowedRetrievals"] = max_allowed_retrievals
+        resp = self.session.post(
+            "%s/api/v2/import_token" % self.endpoint_url, json=data
+        )
+
+        self._validate_resp(resp)
+        return resp.json()
+
+    def get_import_token(self):
+        """
+        Retrieves an import token associated with the current service instance. Token must be previously created by
+        a create import token call.
+
+        API Docs: https://cloud.ibm.com/apidocs/key-protect#getimporttoken
+        """
+
+        resp = self.session.get("%s/api/v2/import_token" % self.endpoint_url)
+        self._validate_resp(resp)
+        return resp.json()
+
     # deprecated methods
     keys = list_keys
     get = get_key

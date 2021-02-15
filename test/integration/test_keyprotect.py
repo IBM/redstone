@@ -57,6 +57,17 @@ class KeyProtectTestCase(unittest.TestCase):
         # test deleting key ring
         resp = self.kp.delete_key_ring("testKeyRingIdPython")
 
+    def test_import_token(self):
+        # create import token
+        resp = self.kp.create_import_token(expiration=86400, max_allowed_retrievals=50)
+        self.assertEqual(resp["maxAllowedRetrievals"], 50)
+        self.assertEqual(resp["remainingRetrievals"], 50)
+
+        # get import token
+        resp = self.kp.get_import_token()
+        self.assertEqual(resp["maxAllowedRetrievals"], 50)
+        self.assertEqual(resp["remainingRetrievals"], 49)
+
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
