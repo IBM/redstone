@@ -606,16 +606,25 @@ class KeyProtect(BaseClient):
         return self._action(key_id, "rotate", data)
 
     def create_key_alias(self, key_id: str, alias: str):
-        """Creates an alias for the specified key"""
+        """
+        Creates an alias for the specified key
+
+        API Docs: https://cloud.ibm.com/apidocs/key-protect#createkeyalias
+        """
+
         resp = self.session.post("%s/api/v2/keys/%s/aliases/%s" % (self.endpoint_url, key_id, alias))
         self._validate_resp(resp)
         return resp.json()
 
     def delete_key_alias(self, key_id: str, alias: str):
-        """Deletes an alias from the associated key"""
+        """
+        Deletes an alias from the associated key
+
+        API Docs: https://cloud.ibm.com/apidocs/key-protect#deletekeyalias
+        """
+
         resp = self.session.delete("%s/api/v2/keys/%s/aliases/%s" % (self.endpoint_url, key_id, alias))
         self._validate_resp(resp)
-        return resp.status_code
 
 
 class CISAuth(requests.auth.AuthBase):

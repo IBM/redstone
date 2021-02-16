@@ -28,25 +28,29 @@ class KeyProtectTestCase(unittest.TestCase):
                                    )
 
     def tearDown(self):
-        for key in self.kp.keys():
-            self.kp.delete(key.get('id'))
-
-        self.rc.delete_instance(self.instance_id)
-        self.kp.session.close()
+        try:
+            for key in self.kp.keys():
+                self.kp.delete(key.get('id'))
+        finally:
+            self.rc.delete_instance(self.instance_id)
 
     def test_key_alias(self):
+
         # test creating key alias
         self.key = self.kp.create(name="test-key", root=True)
         resp = self.kp.create_key_alias(self.key['id'], "testKeyAlias")
         self.assertEqual(resp['resources'][0]['keyId'], self.key['id'])
         self.assertEqual(resp['resources'][0]['alias'], "testKeyAlias")
+
         # test getting key by using the key alias
         resp = self.kp.get("testKeyAlias")
         self.assertEqual(resp['id'], self.key['id'])
         self.assertEqual(resp['aliases'][0], "testKeyAlias")
+
         # test deleting key alias
         resp = self.kp.delete_key_alias(self.key['id'], "testKeyAlias")
-        self.assertEqual(resp, 204)
+        self.assertEqual(resp, None)
+
         # clean up
         self.kp.delete(self.key.get('id'))
 
