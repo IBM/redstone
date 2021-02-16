@@ -606,8 +606,11 @@ class KeyProtect(BaseClient):
         return self._action(key_id, "rotate", data)
 
     def create_import_token(self, expiration: int = None, max_allowed_retrievals: int = None):
-        """Create an import token that can be used to import encrypted material as root keys."""
-        """API Docs: https://cloud.ibm.com/apidocs/key-protect#postimporttoken"""
+        """
+        Create an import token that can be used to import encrypted material as root keys.
+
+        API Docs: https://cloud.ibm.com/apidocs/key-protect#postimporttoken
+        """
 
         data = {}
         if expiration:
@@ -623,9 +626,12 @@ class KeyProtect(BaseClient):
         return resp.json()
 
     def get_import_token(self):
-        """Retrieves an import token associated with the current service instance. Token must be previously created by
-        a create import token call."""
-        """API Docs: https://cloud.ibm.com/apidocs/key-protect#getimporttoken"""
+        """
+        Retrieves an import token associated with the current service instance. Token must be previously created by
+        a create import token call.
+
+        API Docs: https://cloud.ibm.com/apidocs/key-protect#getimporttoken
+        """
 
         resp = self.session.get("%s/api/v2/import_token" % self.endpoint_url)
         self._validate_resp(resp)
