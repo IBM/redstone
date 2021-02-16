@@ -605,7 +605,9 @@ class KeyProtect(BaseClient):
 
         return self._action(key_id, "rotate", data)
 
-    def _set_policy(self, collection_total, resources_list, key_or_instance, key_id=None):
+    def _set_policy(self, resources_list, key_id=None):
+
+        collection_total = len(resources_list)
         data = {
             "metadata": {
                 "collectionType": "application/vnd.ibm.kms.policy+json",
@@ -613,16 +615,18 @@ class KeyProtect(BaseClient):
             },
             "resources": resources_list
         }
-        if key_or_instance == 'instance':
-            resp = self.session.put(
-                "%s/api/v2/instance/policies" % (self.endpoint_url),
-                json=data
-            )
-        else:
+
+        if key_id:
             resp = self.session.put(
                 "%s/api/v2/keys/%s/policies" % (self.endpoint_url, key_id),
                 json=data
             )
+        else:
+            resp = self.session.put(
+                "%s/api/v2/instance/policies" % self.endpoint_url,
+                json=data
+            )
+
         self._validate_resp(resp)
         if resp.status_code == 204:
             return
@@ -642,7 +646,7 @@ class KeyProtect(BaseClient):
             }
         }
         ]
-        return self._set_policy(1, resources_list, 'key', key_id)
+        return self._set_policy(resources_list, key_id)
 
     def set_key_dual_auth_policy(self, key_id: str, dual_auth_enable: bool):
         """
@@ -657,7 +661,7 @@ class KeyProtect(BaseClient):
             }
         }
         ]
-        return self._set_policy(1, resources_list, 'key', key_id)
+        return self._set_policy(resources_list, key_id)
 
     def get_key_policies(self, key_id: str):
         """
@@ -682,7 +686,7 @@ class KeyProtect(BaseClient):
             }
         }
         ]
-        return self._set_policy(1, resources_list, 'instance')
+        return self._set_policy(resources_list)
 
     def set_instance_allowed_network_policy(self, allowed_network_enable: bool, network_type: str):
         """
@@ -699,7 +703,7 @@ class KeyProtect(BaseClient):
                 }
             }
         }]
-        return self._set_policy(1, resources_list, 'instance')
+        return self._set_policy(resources_list)
 
     def set_instance_allowed_ip_policy(self, allowed_ip_enable: bool, allowed_ips: List[str]):
         """
@@ -716,7 +720,7 @@ class KeyProtect(BaseClient):
                 }
             }
         }]
-        return self._set_policy(1, resources_list, 'instance')
+        return self._set_policy(resources_list)
 
     def get_instance_policies(self):
         """
