@@ -4,7 +4,6 @@ import unittest
 import redstone
 
 
-
 TEST_INSTANCE_NAME_PREFIX = "my-test-instance"
 
 
