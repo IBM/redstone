@@ -605,6 +605,27 @@ class KeyProtect(BaseClient):
 
         return self._action(key_id, "rotate", data)
 
+    def disable_key(self, key_id: str):
+        """
+        Disable a key. The key will not be deleted but it will not be active and key operations cannot
+        be performed on a disabled key.
+
+        API Docs: https://cloud.ibm.com/apidocs/key-protect#disablekey
+        """
+        resp = self.session.post("%s/api/v2/keys/%s/actions/disable" % (self.endpoint_url, key_id))
+        self._validate_resp(resp)
+
+    def enable_key(self, key_id: str):
+        """
+        Enable a key. Only disabled keys can be enabled. After enable the key becomes active and key
+        operations can be performed on it.
+        Note: This does not recover Deleted keys.
+
+        API Docs: https://cloud.ibm.com/apidocs/key-protect#enablekey
+        """
+        resp = self.session.post("%s/api/v2/keys/%s/actions/enable" % (self.endpoint_url, key_id))
+        self._validate_resp(resp)
+
 
 class CISAuth(requests.auth.AuthBase):
     def __init__(self, credentials):
