@@ -4,7 +4,6 @@ import unittest
 import redstone
 
 
-logging.basicConfig(level=logging.DEBUG)
 
 TEST_INSTANCE_NAME_PREFIX = "my-test-instance"
 
@@ -51,4 +50,5 @@ class ResourceControllerTestCase(unittest.TestCase):
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.DEBUG)
     unittest.main()
