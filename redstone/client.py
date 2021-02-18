@@ -653,18 +653,16 @@ class KeyProtect(BaseClient):
                 "collectionType": "application/vnd.ibm.kms.policy+json",
                 "collectionTotal": collection_total,
             },
-            "resources": resources_list
+            "resources": resources_list,
         }
 
         if key_id:
             resp = self.session.put(
-                "%s/api/v2/keys/%s/policies" % (self.endpoint_url, key_id),
-                json=data
+                "%s/api/v2/keys/%s/policies" % (self.endpoint_url, key_id), json=data
             )
         else:
             resp = self.session.put(
-                "%s/api/v2/instance/policies" % self.endpoint_url,
-                json=data
+                "%s/api/v2/instance/policies" % self.endpoint_url, json=data
             )
 
         self._validate_resp(resp)
@@ -679,12 +677,13 @@ class KeyProtect(BaseClient):
 
         API Docs: https://cloud.ibm.com/apidocs/key-protect#putpolicy
         """
-        resources_list = [{
-            "type": "application/vnd.ibm.kms.policy+json",
-            "rotation": {
-                "interval_month": int(rotation_interval),
+        resources_list = [
+            {
+                "type": "application/vnd.ibm.kms.policy+json",
+                "rotation": {
+                    "interval_month": int(rotation_interval),
+                },
             }
-        }
         ]
         return self._set_policy(resources_list, key_id)
 
@@ -694,12 +693,11 @@ class KeyProtect(BaseClient):
 
         API Docs: https://cloud.ibm.com/apidocs/key-protect#putpolicy
         """
-        resources_list = [{
-            "type": "application/vnd.ibm.kms.policy+json",
-            "dualAuthDelete": {
-                "enabled": dual_auth_enable
+        resources_list = [
+            {
+                "type": "application/vnd.ibm.kms.policy+json",
+                "dualAuthDelete": {"enabled": dual_auth_enable},
             }
-        }
         ]
         return self._set_policy(resources_list, key_id)
 
@@ -709,7 +707,9 @@ class KeyProtect(BaseClient):
 
         API Docs: https://cloud.ibm.com/apidocs/key-protect#getpolicy
         """
-        resp = self.session.get("%s/api/v2/keys/%s/policies" % (self.endpoint_url, key_id))
+        resp = self.session.get(
+            "%s/api/v2/keys/%s/policies" % (self.endpoint_url, key_id)
+        )
         self._validate_resp(resp)
         return resp.json()
 
@@ -719,47 +719,50 @@ class KeyProtect(BaseClient):
 
         API Docs: https://cloud.ibm.com/apidocs/key-protect#putinstancepolicy
         """
-        resources_list = [{
-            "policy_type": "dualAuthDelete",
-            "policy_data": {
-                "enabled": dual_auth_enable
+        resources_list = [
+            {
+                "policy_type": "dualAuthDelete",
+                "policy_data": {"enabled": dual_auth_enable},
             }
-        }
         ]
         return self._set_policy(resources_list)
 
-    def set_instance_allowed_network_policy(self, allowed_network_enable: bool, network_type: str):
+    def set_instance_allowed_network_policy(
+        self, allowed_network_enable: bool, network_type: str
+    ):
         """
         Updates the allowed network policy for the instance
 
         API Docs: https://cloud.ibm.com/apidocs/key-protect#putinstancepolicy
         """
-        resources_list = [{
-            "policy_type": "allowedNetwork",
-            "policy_data": {
-                "enabled": allowed_network_enable,
-                "attributes": {
-                    "allowed_network": network_type
-                }
+        resources_list = [
+            {
+                "policy_type": "allowedNetwork",
+                "policy_data": {
+                    "enabled": allowed_network_enable,
+                    "attributes": {"allowed_network": network_type},
+                },
             }
-        }]
+        ]
         return self._set_policy(resources_list)
 
-    def set_instance_allowed_ip_policy(self, allowed_ip_enable: bool, allowed_ips: List[str]):
+    def set_instance_allowed_ip_policy(
+        self, allowed_ip_enable: bool, allowed_ips: List[str]
+    ):
         """
         Updates the allowed ip policy for the instance
 
         API Docs: https://cloud.ibm.com/apidocs/key-protect#putinstancepolicy
         """
-        resources_list = [{
-            "policy_type": "allowedIP",
-            "policy_data": {
-                "enabled": allowed_ip_enable,
-                "attributes": {
-                    "allowed_ip": allowed_ips
-                }
+        resources_list = [
+            {
+                "policy_type": "allowedIP",
+                "policy_data": {
+                    "enabled": allowed_ip_enable,
+                    "attributes": {"allowed_ip": allowed_ips},
+                },
             }
-        }]
+        ]
         return self._set_policy(resources_list)
 
     def get_instance_policies(self):
