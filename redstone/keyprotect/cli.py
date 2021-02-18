@@ -38,9 +38,9 @@ def _main():
 
     subp = p.add_subparsers(dest="action")
 
-    ilp = subp.add_parser("list-instances")
+    _ = subp.add_parser("list-instances")
 
-    lp = subp.add_parser("list")
+    _ = subp.add_parser("list")
 
     cp = subp.add_parser("create")
     cp.add_argument("name")
