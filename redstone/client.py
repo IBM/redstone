@@ -653,7 +653,9 @@ class KeyProtect(BaseClient):
         API Docs: https://cloud.ibm.com/apidocs/key-protect#createkeyalias
         """
 
-        resp = self.session.post("%s/api/v2/keys/%s/aliases/%s" % (self.endpoint_url, key_id, alias))
+        resp = self.session.post(
+            "%s/api/v2/keys/%s/aliases/%s" % (self.endpoint_url, key_id, alias)
+        )
         self._validate_resp(resp)
         return resp.json()
 
@@ -664,7 +666,9 @@ class KeyProtect(BaseClient):
         API Docs: https://cloud.ibm.com/apidocs/key-protect#deletekeyalias
         """
 
-        resp = self.session.delete("%s/api/v2/keys/%s/aliases/%s" % (self.endpoint_url, key_id, alias))
+        resp = self.session.delete(
+            "%s/api/v2/keys/%s/aliases/%s" % (self.endpoint_url, key_id, alias)
+        )
         self._validate_resp(resp)
 
     # deprecated methods

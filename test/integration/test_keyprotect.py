@@ -50,17 +50,17 @@ class KeyProtectTestCase(unittest.TestCase):
         self.addCleanup(self.kp.delete, self.key.get("id"))
 
         # test creating key alias
-        resp = self.kp.create_key_alias(self.key['id'], "testKeyAlias")
-        self.assertEqual(resp['resources'][0]['keyId'], self.key['id'])
-        self.assertEqual(resp['resources'][0]['alias'], "testKeyAlias")
+        resp = self.kp.create_key_alias(self.key["id"], "testKeyAlias")
+        self.assertEqual(resp["resources"][0]["keyId"], self.key["id"])
+        self.assertEqual(resp["resources"][0]["alias"], "testKeyAlias")
 
         # test getting key by using the key alias
         resp = self.kp.get("testKeyAlias")
-        self.assertEqual(resp['id'], self.key['id'])
-        self.assertEqual(resp['aliases'][0], "testKeyAlias")
+        self.assertEqual(resp["id"], self.key["id"])
+        self.assertEqual(resp["aliases"][0], "testKeyAlias")
 
         # test deleting key alias
-        resp = self.kp.delete_key_alias(self.key['id'], "testKeyAlias")
+        resp = self.kp.delete_key_alias(self.key["id"], "testKeyAlias")
         self.assertEqual(resp, None)
 
 
