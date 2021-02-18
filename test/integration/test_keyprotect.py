@@ -1,10 +1,8 @@
 import logging
-import unittest
-import os
 import time
+import unittest
 
 import redstone
-from redstone import auth as bxauth
 
 
 class KeyProtectTestCase(unittest.TestCase):
@@ -18,9 +16,7 @@ class KeyProtectTestCase(unittest.TestCase):
         )
 
         cls.kp = redstone.service(
-            "KeyProtect",
-            region="us-south",
-            service_instance_id=cls.instance_id,
+            "KeyProtect", region="us-south", service_instance_id=cls.instance_id
         )
 
     @classmethod

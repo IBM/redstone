@@ -31,8 +31,8 @@ import json
 import logging
 import os
 import sys
-import time
 import threading
+import time
 
 import requests
 
@@ -64,7 +64,10 @@ class TokenManager(object):
         self._lock = threading.RLock()
 
     def get_token(self) -> str:
-        """Retrieve a valid, unexpired token from IAM if needed, or return a cached, unexpired token."""
+        """
+        Retrieve a valid, unexpired token from IAM if needed,
+        or return a cached, unexpired token.
+        """
 
         with self._lock:
             if (
@@ -212,7 +215,7 @@ def get_spaces(bearer_token, spaces_path):
         "Accept": "application/json;charset=utf-8",
     }
 
-    resp = request.get(api_endpoint, headers=headers)
+    resp = requests.get(api_endpoint, headers=headers)
     return resp.text
 
 

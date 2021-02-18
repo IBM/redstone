@@ -46,14 +46,17 @@ instead.
 """
 
 import os
-from typing import Optional
+from typing import Optional  # noqa: F401
 
-from redstone import client
 from redstone import auth
+from redstone import client
 
 
 DEFAULT_SESSION = None  # Optional[Session]
-"""Holds the current default :py:class:`Session` or None if no session has been built yet."""
+"""
+Holds the current default :py:class:`Session` or
+None if no session has been built yet.
+"""
 
 
 class Session(object):

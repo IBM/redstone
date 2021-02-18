@@ -25,7 +25,7 @@ import io
 import json
 import logging
 import re
-from typing import List, Dict
+from typing import Dict, List
 import urllib.parse
 import zipfile
 
@@ -91,7 +91,8 @@ class IKS(BaseClient):
     def __init__(self, *args, **kwargs):
         super(IKS, self).__init__(*args, **kwargs)
 
-        # IKS likes to throw back random 503s at times, but retrying generally works fine
+        # IKS likes to throw back random 503s at times,
+        # but retrying generally works fine
         # requests default is Retry(0, read=False); see requests/adapters.py
         retry_conf = Retry(
             total=5, read=False, backoff_factor=1, status_forcelist=[502, 503]
@@ -243,13 +244,13 @@ class IKS(BaseClient):
         # this is a pretty hacky way of getting one, but we shouldn't even
         # need it either so... idk. /shrug
 
-        # do a get token before, to make sure we get a valid refresh token.
-        _token = self.session.auth._token_manager.get_token()
+        # do a get token before, to make sure we get a valid refresh token
+        _ = self.session.auth._token_manager.get_token()
         refresh_token = self.session.auth._token_manager._token_info.get(
             "refresh_token"
         )
 
-        # pure yaml output was added sometime after our original code to deal with the zipfile,
+        # yaml output was added after our original code to deal with the zipfile
         # leaving both in because maybe its useful for someone to use the zip path still
         params = {}
         if output_format == "yaml":
@@ -401,7 +402,8 @@ class ResourceController(BaseClient):
 
     def _create_instance_v1(self, name, region, resource_group_id, resource_plan_id):
 
-        # seems like the target_crn is the region selector, and its just the price plan ID with the region stuck at the end
+        # seems like the target_crn is the region selector,
+        # and its just the price plan ID with the region stuck at the end
         target_crn = (
             "crn:v1:bluemix:public:globalcatalog::::deployment:{0}%3A{1}".format(
                 resource_plan_id, region
@@ -443,7 +445,7 @@ class ResourceController(BaseClient):
 
     def list_instances(self):
         """
-        Retrieve a list of all the service and resource instances in the current account.
+        Retrieve a list of all service and resource instances in the current account.
 
         Note this will return an iterator that will handle the underlying pagination of
         large sets of instances returned.
