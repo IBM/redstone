@@ -22,6 +22,7 @@ where the concrete classes and logic are for those purposes.
 
 import base64
 import io
+import json
 import logging
 import re
 from typing import List, Dict
@@ -486,7 +487,7 @@ class KeyProtect(BaseClient):
         def wrap(http_error):
             try:
                 message = http_error.response.json()["resources"][0]["errorMsg"]
-            except KeyError:
+            except (KeyError, json.decoder.JSONDecodeError, ValueError):
                 message = http_error.response.text
             err = KeyProtect.KeyProtectError(message)
             err.http_error = http_error
