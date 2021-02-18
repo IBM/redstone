@@ -67,7 +67,6 @@ class Session(object):
     be accessed by using the :py:func:`get_default_session` function.
     """
 
-
     def __init__(self, region=None, iam_api_key=None):
         self.region = region
         self.iam_api_key = iam_api_key

@@ -101,7 +101,10 @@ def encrypt(
 
         # ciphertext is also a utf8 string, but we don't need to do anything but store it for now
         data_keys.append(
-            {"ciphertext": dek_data["ciphertext"], "key_crn": key_crn,}
+            {
+                "ciphertext": dek_data["ciphertext"],
+                "key_crn": key_crn,
+            }
         )
 
     # we now have all the data keys and plaintext form to do some encryption with

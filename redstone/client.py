@@ -299,7 +299,9 @@ class ResourceController(BaseClient):
     """
 
     names = ["rc"]
-    KEYPROTECT_PLAN_ID = "eedd3585-90c6-4c8f-be3d-062069e99fc3"  # keyprotect tiered-pricing ID
+    KEYPROTECT_PLAN_ID = (
+        "eedd3585-90c6-4c8f-be3d-062069e99fc3"  # keyprotect tiered-pricing ID
+    )
 
     def __init__(self, *args, **kwargs):
         super(ResourceController, self).__init__(*args, **kwargs)
@@ -343,7 +345,9 @@ class ResourceController(BaseClient):
 
         # apparently it doesn't complain if we drop query params,
         # didn't want to have to look up the account ID anyway, so +2
-        resp = self.session.get("{0}/v2/resource_groups".format(netloc),)
+        resp = self.session.get(
+            "{0}/v2/resource_groups".format(netloc),
+        )
 
         if resp.status_code != 200:
             raise Exception(
@@ -397,8 +401,10 @@ class ResourceController(BaseClient):
     def _create_instance_v1(self, name, region, resource_group_id, resource_plan_id):
 
         # seems like the target_crn is the region selector, and its just the price plan ID with the region stuck at the end
-        target_crn = "crn:v1:bluemix:public:globalcatalog::::deployment:{0}%3A{1}".format(
-            resource_plan_id, region
+        target_crn = (
+            "crn:v1:bluemix:public:globalcatalog::::deployment:{0}%3A{1}".format(
+                resource_plan_id, region
+            )
         )
 
         body = {
@@ -474,6 +480,7 @@ class KeyProtect(BaseClient):
     """
     API Docs: https://cloud.ibm.com/apidocs/key-protect
     """
+
     class KeyProtectError(Exception):
         @staticmethod
         def wrap(http_error):
