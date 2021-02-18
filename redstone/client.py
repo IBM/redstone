@@ -531,21 +531,21 @@ class KeyProtect(BaseClient):
             http_err.raw_response = log_resp(resp)
             raise KeyProtect.KeyProtectError.wrap(http_err)
 
-    def keys(self):
+    def list_keys(self):
         resp = self.session.get("%s/api/v2/keys" % self.endpoint_url)
 
         self._validate_resp(resp)
 
         return resp.json().get("resources", [])
 
-    def get(self, key_id):
+    def get_key(self, key_id):
         resp = self.session.get("%s/api/v2/keys/%s" % (self.endpoint_url, key_id))
 
         self._validate_resp(resp)
 
         return resp.json().get("resources")[0]
 
-    def create(self, name, payload=None, raw_payload=None, root=False):
+    def create_key(self, name, payload=None, raw_payload=None, root=False):
 
         data = {
             "metadata": {
@@ -571,7 +571,7 @@ class KeyProtect(BaseClient):
         self._validate_resp(resp)
         return resp.json().get("resources")[0]
 
-    def delete(self, key_id):
+    def delete_key(self, key_id):
         resp = self.session.delete("%s/api/v2/keys/%s" % (self.endpoint_url, key_id))
         self._validate_resp(resp)
 
@@ -608,7 +608,7 @@ class KeyProtect(BaseClient):
         resp = self._action(key_id, "unwrap", data)
         return base64.b64decode(resp["plaintext"].encode("utf-8"))
 
-    def rotate(self, key_id, payload=None):
+    def rotate_key(self, key_id, payload=None):
         data = None
         if payload:
             data = {"payload": base64.b64encode(payload).decode("utf-8")}
@@ -644,6 +644,13 @@ class KeyProtect(BaseClient):
             "%s/api/v2/keys/%s/actions/enable" % (self.endpoint_url, key_id)
         )
         self._validate_resp(resp)
+
+    # deprecated methods
+    keys = list_keys
+    get = get_key
+    create = create_key
+    delete = delete_key
+    rotate = rotate_key
 
 
 class CISAuth(requests.auth.AuthBase):
