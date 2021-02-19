@@ -22,9 +22,10 @@ where the concrete classes and logic are for those purposes.
 
 import base64
 import io
+import json
 import logging
 import re
-from typing import List, Dict
+from typing import Dict, List
 import urllib.parse
 import zipfile
 
@@ -90,7 +91,8 @@ class IKS(BaseClient):
     def __init__(self, *args, **kwargs):
         super(IKS, self).__init__(*args, **kwargs)
 
-        # IKS likes to throw back random 503s at times, but retrying generally works fine
+        # IKS likes to throw back random 503s at times,
+        # but retrying generally works fine
         # requests default is Retry(0, read=False); see requests/adapters.py
         retry_conf = Retry(
             total=5, read=False, backoff_factor=1, status_forcelist=[502, 503]
@@ -242,13 +244,13 @@ class IKS(BaseClient):
         # this is a pretty hacky way of getting one, but we shouldn't even
         # need it either so... idk. /shrug
 
-        # do a get token before, to make sure we get a valid refresh token.
-        _token = self.session.auth._token_manager.get_token()
+        # do a get token before, to make sure we get a valid refresh token
+        _ = self.session.auth._token_manager.get_token()
         refresh_token = self.session.auth._token_manager._token_info.get(
             "refresh_token"
         )
 
-        # pure yaml output was added sometime after our original code to deal with the zipfile,
+        # yaml output was added after our original code to deal with the zipfile
         # leaving both in because maybe its useful for someone to use the zip path still
         params = {}
         if output_format == "yaml":
@@ -299,7 +301,9 @@ class ResourceController(BaseClient):
     """
 
     names = ["rc"]
-    KEYPROTECT_PLAN_ID = "eedd3585-90c6-4c8f-be3d-062069e99fc3"  # keyprotect tiered-pricing ID
+    KEYPROTECT_PLAN_ID = (
+        "eedd3585-90c6-4c8f-be3d-062069e99fc3"  # keyprotect tiered-pricing ID
+    )
 
     def __init__(self, *args, **kwargs):
         super(ResourceController, self).__init__(*args, **kwargs)
@@ -343,7 +347,9 @@ class ResourceController(BaseClient):
 
         # apparently it doesn't complain if we drop query params,
         # didn't want to have to look up the account ID anyway, so +2
-        resp = self.session.get("{0}/v2/resource_groups".format(netloc),)
+        resp = self.session.get(
+            "{0}/v2/resource_groups".format(netloc),
+        )
 
         if resp.status_code != 200:
             raise Exception(
@@ -396,9 +402,12 @@ class ResourceController(BaseClient):
 
     def _create_instance_v1(self, name, region, resource_group_id, resource_plan_id):
 
-        # seems like the target_crn is the region selector, and its just the price plan ID with the region stuck at the end
-        target_crn = "crn:v1:bluemix:public:globalcatalog::::deployment:{0}%3A{1}".format(
-            resource_plan_id, region
+        # seems like the target_crn is the region selector,
+        # and its just the price plan ID with the region stuck at the end
+        target_crn = (
+            "crn:v1:bluemix:public:globalcatalog::::deployment:{0}%3A{1}".format(
+                resource_plan_id, region
+            )
         )
 
         body = {
@@ -436,7 +445,7 @@ class ResourceController(BaseClient):
 
     def list_instances(self):
         """
-        Retrieve a list of all the service and resource instances in the current account.
+        Retrieve a list of all service and resource instances in the current account.
 
         Note this will return an iterator that will handle the underlying pagination of
         large sets of instances returned.
@@ -474,12 +483,13 @@ class KeyProtect(BaseClient):
     """
     API Docs: https://cloud.ibm.com/apidocs/key-protect
     """
+
     class KeyProtectError(Exception):
         @staticmethod
         def wrap(http_error):
             try:
                 message = http_error.response.json()["resources"][0]["errorMsg"]
-            except KeyError:
+            except (KeyError, json.decoder.JSONDecodeError, ValueError):
                 message = http_error.response.text
             err = KeyProtect.KeyProtectError(message)
             err.http_error = http_error
@@ -521,21 +531,21 @@ class KeyProtect(BaseClient):
             http_err.raw_response = log_resp(resp)
             raise KeyProtect.KeyProtectError.wrap(http_err)
 
-    def keys(self):
+    def list_keys(self):
         resp = self.session.get("%s/api/v2/keys" % self.endpoint_url)
 
         self._validate_resp(resp)
 
         return resp.json().get("resources", [])
 
-    def get(self, key_id):
+    def get_key(self, key_id):
         resp = self.session.get("%s/api/v2/keys/%s" % (self.endpoint_url, key_id))
 
         self._validate_resp(resp)
 
         return resp.json().get("resources")[0]
 
-    def create(self, name, payload=None, raw_payload=None, root=False):
+    def create_key(self, name, payload=None, raw_payload=None, root=False):
 
         data = {
             "metadata": {
@@ -561,7 +571,7 @@ class KeyProtect(BaseClient):
         self._validate_resp(resp)
         return resp.json().get("resources")[0]
 
-    def delete(self, key_id):
+    def delete_key(self, key_id):
         resp = self.session.delete("%s/api/v2/keys/%s" % (self.endpoint_url, key_id))
         self._validate_resp(resp)
 
@@ -598,14 +608,46 @@ class KeyProtect(BaseClient):
         resp = self._action(key_id, "unwrap", data)
         return base64.b64decode(resp["plaintext"].encode("utf-8"))
 
-    def rotate(self, key_id, payload=None):
+    def rotate_key(self, key_id, payload=None):
         data = None
         if payload:
             data = {"payload": base64.b64encode(payload).decode("utf-8")}
 
         return self._action(key_id, "rotate", data)
 
-    def create_import_token(self, expiration: int = None, max_allowed_retrievals: int = None):
+    def disable_key(self, key_id: str):
+        """
+        Disable a key.
+
+        The key will not be deleted, but it will not be active and
+        key operations cannot be performed on a disabled key.
+
+        API Docs: https://cloud.ibm.com/apidocs/key-protect#disablekey
+        """
+        resp = self.session.post(
+            "%s/api/v2/keys/%s/actions/disable" % (self.endpoint_url, key_id)
+        )
+        self._validate_resp(resp)
+
+    def enable_key(self, key_id: str):
+        """
+        Enable a key.
+
+        Only disabled keys can be enabled. After calling this action, the
+        key becomes active and key operations can be performed on it.
+
+        Note: This does not recover Deleted keys.
+
+        API Docs: https://cloud.ibm.com/apidocs/key-protect#enablekey
+        """
+        resp = self.session.post(
+            "%s/api/v2/keys/%s/actions/enable" % (self.endpoint_url, key_id)
+        )
+        self._validate_resp(resp)
+
+    def create_import_token(
+        self, expiration: int = None, max_allowed_retrievals: int = None
+    ):
         """
         Create an import token that can be used to import encrypted material as root keys.
 
@@ -618,8 +660,7 @@ class KeyProtect(BaseClient):
         if max_allowed_retrievals:
             data["maxAllowedRetrievals"] = float(max_allowed_retrievals)
         resp = self.session.post(
-            "%s/api/v2/import_token" % self.endpoint_url,
-            json=data
+            "%s/api/v2/import_token" % self.endpoint_url, json=data
         )
 
         self._validate_resp(resp)
@@ -636,6 +677,13 @@ class KeyProtect(BaseClient):
         resp = self.session.get("%s/api/v2/import_token" % self.endpoint_url)
         self._validate_resp(resp)
         return resp.json()
+
+    # deprecated methods
+    keys = list_keys
+    get = get_key
+    create = create_key
+    delete = delete_key
+    rotate = rotate_key
 
 
 class CISAuth(requests.auth.AuthBase):
