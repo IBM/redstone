@@ -1,38 +1,48 @@
 import logging
+import time
 import unittest
-import os
-import warnings
 
 import redstone
-from redstone import auth as bxauth
-
-
-logging.basicConfig(level=logging.INFO)
 
 
 class KeyProtectTestCase(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.rc = redstone.service("ResourceController")
+        cls.instance_id, cls.crn = cls.rc.create_instance(
+            name="redstone-keyprotect-integration-tests",
+            plan_id=cls.rc.KEYPROTECT_PLAN_ID,
+            region="us-south",
+        )
 
-    def setUp(self):
-        # filter out the resource warning message
-        warnings.simplefilter("ignore", ResourceWarning)
+        cls.kp = redstone.service(
+            "KeyProtect", region="us-south", service_instance_id=cls.instance_id
+        )
 
-        apikey = os.environ.get('IBMCLOUD_API_KEY')
-        tm = bxauth.TokenManager(api_key=apikey)
-        self.rc = redstone.service("ResourceController")
-        self.instance_id, self.crn = self.rc.create_instance(name="test-instance", plan_id=self.rc.KEYPROTECT_PLAN_ID,
-                                                             region="us-south")
-        self.kp = redstone.service("KeyProtect",
-                                   credentials=tm,
-                                   region="us-south",
-                                   service_instance_id=self.instance_id,
-                                   )
-
-    def tearDown(self):
+    @classmethod
+    def tearDownClass(cls):
         try:
-            for key in self.kp.keys():
-                self.kp.delete(key.get('id'))
+            for key in cls.kp.keys():
+                cls.kp.delete(key.get("id"))
         finally:
-            self.rc.delete_instance(self.instance_id)
+            cls.rc.delete_instance(cls.instance_id)
+
+    def test_disable_enable_key(self):
+        # create a key to be used for test
+        self.key = self.kp.create(name="test-key", root=True)
+        self.addCleanup(self.kp.delete, self.key.get("id"))
+
+        # disable
+        self.kp.disable_key(self.key.get("id"))
+        resp = self.kp.get(self.key.get("id"))
+        self.assertEqual(resp["state"], 2)
+
+        # enable, must wait 30 sec or more before sending an enable
+        time.sleep(30)
+
+        self.kp.enable_key(self.key.get("id"))
+        resp = self.kp.get(self.key.get("id"))
+        self.assertEqual(resp["state"], 1)
 
     def test_key_ring(self):
         # test creating key ring
@@ -41,9 +51,9 @@ class KeyProtectTestCase(unittest.TestCase):
 
         # test getting list of key ring
         resp = self.kp.get_key_rings(self.instance_id)
-        for resource in resp['resources']:
-            if resource['id'] != 'default':
-                self.assertEqual(resource['id'], "testKeyRingIdPython")
+        for resource in resp["resources"]:
+            if resource["id"] != "default":
+                self.assertEqual(resource["id"], "testKeyRingIdPython")
 
         # test deleting key ring
         resp = self.kp.delete_key_ring(self.instance_id, "testKeyRingIdPython")
@@ -51,4 +61,5 @@ class KeyProtectTestCase(unittest.TestCase):
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     unittest.main()
