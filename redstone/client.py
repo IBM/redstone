@@ -733,6 +733,8 @@ class KeyProtect(BaseClient):
         """
         Updates the allowed network policy for the instance
 
+        `network_type` is a str type, and must be one of "public-and-private" or "private-only".
+        The default is "public-and-private", but can be set to "private-only" to disable access to the instance from Internet client addresses.
         API Docs: https://cloud.ibm.com/apidocs/key-protect#putinstancepolicy
         """
         resources_list = [
@@ -750,7 +752,7 @@ class KeyProtect(BaseClient):
         self, allowed_ip_enable: bool, allowed_ips: List[str]
     ):
         """
-        Updates the allowed ip policy for the instance
+        Updates the allowed IP policy for the instance
 
         API Docs: https://cloud.ibm.com/apidocs/key-protect#putinstancepolicy
         """
