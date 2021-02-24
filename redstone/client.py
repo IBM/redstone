@@ -648,7 +648,7 @@ class KeyProtect(BaseClient):
     def create_key_alias(self, key_id: str, alias: str):
         """
         Creates an alias name for a key.
-        An alias name acts as an identifier just like key ID
+        An alias is a user defined string that can be used in place of a normal UUID Key ID
 
         API Docs: https://cloud.ibm.com/apidocs/key-protect#createkeyalias
         """
