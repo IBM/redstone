@@ -36,14 +36,20 @@ def main():
     ep.add_argument(
         "infile",
         type=argparse.FileType("rb"),
-        help="Input file to encrypt. Output will be written to stdout. Use '-' to read from stdin.",
+        help=(
+            "Input file to encrypt. Output will be written to stdout. "
+            "Use '-' to read from stdin."
+        ),
     )
 
     dp = subp.add_parser("decrypt")
     dp.add_argument(
         "infile",
         type=argparse.FileType("rb"),
-        help="Input file to decrypt. Output will be written to stdout. Use '-' to read from stdin.",
+        help=(
+            "Input file to decrypt. Output will be written to stdout. "
+            "Use '-' to read from stdin."
+        ),
     )
 
     args = p.parse_args()
@@ -57,7 +63,10 @@ def main():
         key_crns = args.key_crns or os.getenv(key_crn_env_var)
         if not key_crns:
             print(
-                "No key CRNs specified. Please pass the CRNs with --key-crns or set '%s'"
+                (
+                    "No key CRNs specified. "
+                    "Please pass the CRNs with --key-crns or set '%s'"
+                )
                 % key_crn_env_var,
                 file=sys.stderr,
             )

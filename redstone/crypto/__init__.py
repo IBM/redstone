@@ -99,9 +99,13 @@ def encrypt(
             # plaintext is returned as a utf8 string of base64 in the `plaintext` field
             pt_data_key = base64.b64decode(dek_data["plaintext"].encode("utf-8"))
 
-        # ciphertext is also a utf8 string, but we don't need to do anything but store it for now
+        # ciphertext is also a utf8 string,
+        # but we don't need to do anything but store it for now
         data_keys.append(
-            {"ciphertext": dek_data["ciphertext"], "key_crn": key_crn,}
+            {
+                "ciphertext": dek_data["ciphertext"],
+                "key_crn": key_crn,
+            }
         )
 
     # we now have all the data keys and plaintext form to do some encryption with

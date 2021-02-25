@@ -10,3 +10,13 @@ publish:
 	pip install 'twine>=1.5.0'
 	twine upload dist/*
 	rm -fr build dist .egg *.egg-info
+
+fmt: black
+
+lint: mypy
+
+black:
+	black -t py35 redstone test
+
+mypy:
+	mypy redstone
