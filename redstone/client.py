@@ -645,7 +645,7 @@ class KeyProtect(BaseClient):
         )
         self._validate_resp(resp)
 
-    def create_key_ring(self, instance_id: str, key_ring_id: str):
+    def create_key_ring(self, key_ring_id: str):
         """
         Create a key ring in the instance with the specified name.
 
@@ -654,12 +654,10 @@ class KeyProtect(BaseClient):
 
         resp = self.session.post(
             "%s/api/v2/key_rings/%s" % (self.endpoint_url, key_ring_id),
-            json={"bluemix-instance": instance_id},
         )
         self._validate_resp(resp)
-        return resp.status_code
 
-    def get_key_rings(self, instance_id: str):
+    def get_key_rings(self):
         """
         Get all key rings associated with specified instance
 
@@ -667,12 +665,11 @@ class KeyProtect(BaseClient):
         """
         resp = self.session.get(
             "%s/api/v2/key_rings" % self.endpoint_url,
-            json={"bluemix-instance": instance_id},
         )
         self._validate_resp(resp)
         return resp.json()
 
-    def delete_key_ring(self, instance_id: str, key_ring_id: str):
+    def delete_key_ring(self, key_ring_id: str):
         """
         Deletes a key ring from the associated instance
 
@@ -680,10 +677,8 @@ class KeyProtect(BaseClient):
         """
         resp = self.session.delete(
             "%s/api/v2/key_rings/%s" % (self.endpoint_url, key_ring_id),
-            json={"bluemix-instance": instance_id},
         )
         self._validate_resp(resp)
-        return resp.status_code
 
     # deprecated methods
     keys = list_keys

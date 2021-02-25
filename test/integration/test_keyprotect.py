@@ -46,18 +46,16 @@ class KeyProtectTestCase(unittest.TestCase):
 
     def test_key_ring(self):
         # test creating key ring
-        resp = self.kp.create_key_ring(self.instance_id, "testKeyRingIdPython")
-        self.assertEqual(resp, 201)
+        resp = self.kp.create_key_ring("testKeyRingIdPython")
 
         # test getting list of key ring
-        resp = self.kp.get_key_rings(self.instance_id)
+        resp = self.kp.get_key_rings()
         for resource in resp["resources"]:
             if resource["id"] != "default":
                 self.assertEqual(resource["id"], "testKeyRingIdPython")
 
         # test deleting key ring
-        resp = self.kp.delete_key_ring(self.instance_id, "testKeyRingIdPython")
-        self.assertEqual(resp, 204)
+        resp = self.kp.delete_key_ring("testKeyRingIdPython")
 
 
 if __name__ == "__main__":
