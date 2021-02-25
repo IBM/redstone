@@ -46,7 +46,7 @@ class KeyProtectTestCase(unittest.TestCase):
 
     def test_import_token(self):
         # create import token
-        resp = self.kp.create_import_token(86400, 50)
+        resp = self.kp.create_import_token(expiration=86400, max_allowed_retrievals=50)
         self.assertEqual(resp["maxAllowedRetrievals"], 50)
         self.assertEqual(resp["remainingRetrievals"], 50)
 
