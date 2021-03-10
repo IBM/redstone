@@ -718,8 +718,9 @@ class KeyProtect(BaseClient):
         `crn` should be a str type that will be passed as the `urlEncodedResourceCRNQuery` parameter to the HTTP API.
         It is used to filter registration on a specific cloud resource. More information can be found in the API docs below.
 
-        API Docs: https://cloud.ibm.com/apidocs/key-protect#getregistrations
-                  https://cloud.ibm.com/apidocs/key-protect#getregistrationsallkeys
+        API Docs:
+          - https://cloud.ibm.com/apidocs/key-protect#getregistrations
+          - https://cloud.ibm.com/apidocs/key-protect#getregistrationsallkeys
         """
         params = {}
         if crn is not None:
