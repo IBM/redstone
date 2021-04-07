@@ -538,14 +538,14 @@ class KeyProtect(BaseClient):
 
         return resp.json().get("resources", [])
 
-    def get_key(self, key_id):
-        resp = self.session.get("%s/api/v2/keys/%s" % (self.endpoint_url, key_id))
+    def get_key(self, key_id_or_alias):
+        resp = self.session.get("%s/api/v2/keys/%s" % (self.endpoint_url, key_id_or_alias))
 
         self._validate_resp(resp)
 
         return resp.json().get("resources")[0]
 
-    def create_key(self, name, payload=None, raw_payload=None, root=False):
+    def create_key(self, name, payload=None, raw_payload=None, root=False, alias_list=None):
 
         data = {
             "metadata": {
@@ -566,6 +566,10 @@ class KeyProtect(BaseClient):
             data["resources"][0]["payload"] = raw_payload
         elif payload is not None:
             data["resources"][0]["payload"] = base64.b64encode(payload).decode("utf-8")
+
+        # creates a new key with alias name. A key can have a maximum of 5 alias names
+        if alias_list is not None:
+            data["resources"][0]["aliases"] = alias_list
 
         resp = self.session.post("%s/api/v2/keys" % self.endpoint_url, json=data)
         self._validate_resp(resp)
@@ -842,6 +846,24 @@ class KeyProtect(BaseClient):
         self._validate_resp(resp)
         return resp.json()
 
+    def initiate_dual_auth_delete(self, key_id: str):
+        """
+        Authorize deletion for a key with a dual authorization policy
+
+        API Docs: https://cloud.ibm.com/apidocs/key-protect#setkeyfordeletion
+        """
+        resp = self.session.post("%s/api/v2/keys/%s/actions/setKeyForDeletion" % (self.endpoint_url, key_id))
+        self._validate_resp(resp)
+
+    def cancel_dual_auth_delete(self, key_id: str):
+        """
+        Remove an authorization for a key with a dual authorization policy
+
+        API Docs: https://cloud.ibm.com/apidocs/key-protect#unsetkeyfordeletion
+        """
+        resp = self.session.post("%s/api/v2/keys/%s/actions/unsetKeyForDeletion" % (self.endpoint_url, key_id))
+        self._validate_resp(resp)
+
     def set_instance_dual_auth_policy(self, dual_auth_enable: bool):
         """
         Updates the dual auth delete policy for the instance by passing the enable detail
@@ -892,6 +914,51 @@ class KeyProtect(BaseClient):
                     "enabled": allowed_ip_enable,
                     "attributes": {"allowed_ip": allowed_ips},
                 },
+            }
+        ]
+        return self._set_policy(resources_list)
+
+    def set_instance_key_create_import_access_policy(
+        self,
+        key_create_import_access_enable: bool,
+        create_root_key: bool,
+        create_standard_key: bool,
+        import_root_key: bool,
+        import_standard_key: bool,
+        enforce_token: bool
+    ):
+        """
+        Updates the key create import access policy details associated with an instance.
+
+        API Docs: https://cloud.ibm.com/apidocs/key-protect#putinstancepolicy
+        """
+        resources_list = [
+            {
+                "policy_type": "keyCreateImportAccess",
+                "policy_data": {
+                    "enabled": key_create_import_access_enable,
+                    "attributes": {
+                        "create_root_key": create_root_key,
+                        "create_standard_key": create_standard_key,
+                        "import_root_key": import_root_key,
+                        "import_standard_key": import_standard_key,
+                        "enforce_token": enforce_token
+                    },
+                },
+            }
+        ]
+        return self._set_policy(resources_list)
+
+    def set_instance_metrics_policy(self, metrics_enable: bool):
+        """
+        Updates the metrics policy details associated with an instance
+
+        API Docs: https://cloud.ibm.com/apidocs/key-protect#putinstancepolicy
+        """
+        resources_list = [
+            {
+                "policy_type": "metrics",
+                "policy_data": {"enabled": metrics_enable},
             }
         ]
         return self._set_policy(resources_list)
