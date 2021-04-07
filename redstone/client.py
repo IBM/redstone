@@ -539,13 +539,17 @@ class KeyProtect(BaseClient):
         return resp.json().get("resources", [])
 
     def get_key(self, key_id_or_alias):
-        resp = self.session.get("%s/api/v2/keys/%s" % (self.endpoint_url, key_id_or_alias))
+        resp = self.session.get(
+            "%s/api/v2/keys/%s" % (self.endpoint_url, key_id_or_alias)
+        )
 
         self._validate_resp(resp)
 
         return resp.json().get("resources")[0]
 
-    def create_key(self, name, payload=None, raw_payload=None, root=False, alias_list=None):
+    def create_key(
+        self, name, payload=None, raw_payload=None, root=False, alias_list=None
+    ):
 
         data = {
             "metadata": {
@@ -852,7 +856,9 @@ class KeyProtect(BaseClient):
 
         API Docs: https://cloud.ibm.com/apidocs/key-protect#setkeyfordeletion
         """
-        resp = self.session.post("%s/api/v2/keys/%s/actions/setKeyForDeletion" % (self.endpoint_url, key_id))
+        resp = self.session.post(
+            "%s/api/v2/keys/%s/actions/setKeyForDeletion" % (self.endpoint_url, key_id)
+        )
         self._validate_resp(resp)
 
     def cancel_dual_auth_delete(self, key_id: str):
@@ -861,7 +867,10 @@ class KeyProtect(BaseClient):
 
         API Docs: https://cloud.ibm.com/apidocs/key-protect#unsetkeyfordeletion
         """
-        resp = self.session.post("%s/api/v2/keys/%s/actions/unsetKeyForDeletion" % (self.endpoint_url, key_id))
+        resp = self.session.post(
+            "%s/api/v2/keys/%s/actions/unsetKeyForDeletion"
+            % (self.endpoint_url, key_id)
+        )
         self._validate_resp(resp)
 
     def set_instance_dual_auth_policy(self, dual_auth_enable: bool):
@@ -925,7 +934,7 @@ class KeyProtect(BaseClient):
         create_standard_key: bool,
         import_root_key: bool,
         import_standard_key: bool,
-        enforce_token: bool
+        enforce_token: bool,
     ):
         """
         Updates the key create import access policy details associated with an instance.
@@ -942,7 +951,7 @@ class KeyProtect(BaseClient):
                         "create_standard_key": create_standard_key,
                         "import_root_key": import_root_key,
                         "import_standard_key": import_standard_key,
-                        "enforce_token": enforce_token
+                        "enforce_token": enforce_token,
                     },
                 },
             }

@@ -32,14 +32,18 @@ class KeyProtectTestCase(unittest.TestCase):
         resp = self.kp.create(name="test-key", root=True)
         self.addCleanup(self.kp.delete, resp.get("id"))
         self.assertEqual(resp["state"], 1)
-        self.assertEqual(resp["name"], 'test-key')
+        self.assertEqual(resp["name"], "test-key")
 
     def test_create_key_with_alias(self):
         # create a key with aliases
-        resp = self.kp.create(name="test-key", root=True, alias_list=["key_alias_1", "key_alias_2", "key_alias_3"])
+        resp = self.kp.create(
+            name="test-key",
+            root=True,
+            alias_list=["key_alias_1", "key_alias_2", "key_alias_3"],
+        )
         self.addCleanup(self.kp.delete, resp.get("id"))
         self.assertEqual(resp["state"], 1)
-        self.assertEqual(resp["name"], 'test-key')
+        self.assertEqual(resp["name"], "test-key")
         self.assertEqual(len(resp["aliases"]), 3)
         self.assertEqual(resp["aliases"][0], "key_alias_1")
 
@@ -49,7 +53,7 @@ class KeyProtectTestCase(unittest.TestCase):
         self.addCleanup(self.kp.delete, self.key.get("id"))
         resp = self.kp.get_key(key_id_or_alias=self.key.get("id"))
         self.assertEqual(resp["state"], 1)
-        self.assertEqual(resp["name"], 'test-key')
+        self.assertEqual(resp["name"], "test-key")
 
     def test_get_key_using_alias(self):
         # create a key to be used for test
@@ -57,7 +61,7 @@ class KeyProtectTestCase(unittest.TestCase):
         self.addCleanup(self.kp.delete, self.key.get("id"))
         resp = self.kp.get_key(key_id_or_alias="key_alias")
         self.assertEqual(resp["state"], 1)
-        self.assertEqual(resp["name"], 'test-key')
+        self.assertEqual(resp["name"], "test-key")
         self.assertEqual(resp["aliases"][0], "key_alias")
 
     def test_wrap_unwrap(self):
@@ -65,11 +69,11 @@ class KeyProtectTestCase(unittest.TestCase):
         self.key = self.kp.create(name="test-key", root=True)
         self.addCleanup(self.kp.delete, self.key.get("id"))
         # wrap
-        message = b'This is a really important message.'
-        wrapped = self.kp.wrap(self.key.get('id'), message)
+        message = b"This is a really important message."
+        wrapped = self.kp.wrap(self.key.get("id"), message)
         ciphertext = wrapped.get("ciphertext")
         # unwrap
-        unwrapped = self.kp.unwrap(self.key.get('id'), ciphertext)
+        unwrapped = self.kp.unwrap(self.key.get("id"), ciphertext)
         self.assertEqual(message, unwrapped)
 
     def test_wrap_unwrap_with_aad(self):
@@ -77,11 +81,13 @@ class KeyProtectTestCase(unittest.TestCase):
         self.key = self.kp.create(name="test-key", root=True)
         self.addCleanup(self.kp.delete, self.key.get("id"))
         # wrap
-        message = b'This is a really important message.'
-        wrapped = self.kp.wrap(self.key.get('id'), message, aad=['python-keyprotect'])
+        message = b"This is a really important message."
+        wrapped = self.kp.wrap(self.key.get("id"), message, aad=["python-keyprotect"])
         ciphertext = wrapped.get("ciphertext")
         # unwrap
-        unwrapped = self.kp.unwrap(self.key.get('id'), ciphertext, aad=['python-keyprotect'])
+        unwrapped = self.kp.unwrap(
+            self.key.get("id"), ciphertext, aad=["python-keyprotect"]
+        )
         self.assertEqual(message, unwrapped)
 
     def test_disable_enable_key(self):
