@@ -573,7 +573,10 @@ class KeyProtect(BaseClient):
 
         # creates a new key with alias name. A key can have a maximum of 5 alias names
         if alias_list is not None:
-            data["resources"][0]["aliases"] = alias_list
+            if len(alias_list) > 5:
+                raise ValueError("A key can not have more than 5 alias names")
+            else:
+                data["resources"][0]["aliases"] = alias_list
 
         resp = self.session.post("%s/api/v2/keys" % self.endpoint_url, json=data)
         self._validate_resp(resp)
@@ -938,6 +941,8 @@ class KeyProtect(BaseClient):
     ):
         """
         Updates the key create import access policy details associated with an instance.
+
+        'key_create_import_access_enable' is boolean type, the instance policy is enabled if it's set to true
 
         API Docs: https://cloud.ibm.com/apidocs/key-protect#putinstancepolicy
         """

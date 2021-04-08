@@ -47,6 +47,22 @@ class KeyProtectTestCase(unittest.TestCase):
         self.assertEqual(len(resp["aliases"]), 3)
         self.assertEqual(resp["aliases"][0], "key_alias_1")
 
+    def test_create_key_with_more_then_5_alias(self):
+        # create a key with more than 5 aliases, should raise ValueError
+        with self.assertRaises(ValueError):
+            self.kp.create(
+                name="test-key",
+                root=True,
+                alias_list=[
+                    "key_alias_1",
+                    "key_alias_2",
+                    "key_alias_3",
+                    "key_alias_4",
+                    "key_alias_5",
+                    "key_alias_6",
+                ],
+            )
+
     def test_get_key(self):
         # create a key to be used for test
         self.key = self.kp.create(name="test-key", root=True)
