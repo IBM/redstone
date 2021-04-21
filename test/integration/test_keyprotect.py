@@ -27,6 +27,85 @@ class KeyProtectTestCase(unittest.TestCase):
         finally:
             cls.rc.delete_instance(cls.instance_id)
 
+    def test_create_key(self):
+        # create a key
+        resp = self.kp.create(name="test-key", root=True)
+        self.addCleanup(self.kp.delete, resp.get("id"))
+        self.assertEqual(resp["state"], 1)
+        self.assertEqual(resp["name"], "test-key")
+
+    def test_create_key_with_alias(self):
+        # create a key with aliases
+        resp = self.kp.create(
+            name="test-key",
+            root=True,
+            alias_list=["key_alias_1", "key_alias_2", "key_alias_3"],
+        )
+        self.addCleanup(self.kp.delete, resp.get("id"))
+        self.assertEqual(resp["state"], 1)
+        self.assertEqual(resp["name"], "test-key")
+        self.assertEqual(len(resp["aliases"]), 3)
+        self.assertEqual(resp["aliases"][0], "key_alias_1")
+
+    def test_create_key_with_more_then_5_alias(self):
+        # create a key with more than 5 aliases, should raise ValueError
+        with self.assertRaises(ValueError):
+            self.kp.create(
+                name="test-key",
+                root=True,
+                alias_list=[
+                    "key_alias_1",
+                    "key_alias_2",
+                    "key_alias_3",
+                    "key_alias_4",
+                    "key_alias_5",
+                    "key_alias_6",
+                ],
+            )
+
+    def test_get_key(self):
+        # create a key to be used for test
+        self.key = self.kp.create(name="test-key", root=True)
+        self.addCleanup(self.kp.delete, self.key.get("id"))
+        resp = self.kp.get_key(key_id_or_alias=self.key.get("id"))
+        self.assertEqual(resp["state"], 1)
+        self.assertEqual(resp["name"], "test-key")
+
+    def test_get_key_using_alias(self):
+        # create a key to be used for test
+        self.key = self.kp.create(name="test-key", root=True, alias_list=["key_alias"])
+        self.addCleanup(self.kp.delete, self.key.get("id"))
+        resp = self.kp.get_key(key_id_or_alias="key_alias")
+        self.assertEqual(resp["state"], 1)
+        self.assertEqual(resp["name"], "test-key")
+        self.assertEqual(resp["aliases"][0], "key_alias")
+
+    def test_wrap_unwrap(self):
+        # create a key to be used for test
+        self.key = self.kp.create(name="test-key", root=True)
+        self.addCleanup(self.kp.delete, self.key.get("id"))
+        # wrap
+        message = b"This is a really important message."
+        wrapped = self.kp.wrap(self.key.get("id"), message)
+        ciphertext = wrapped.get("ciphertext")
+        # unwrap
+        unwrapped = self.kp.unwrap(self.key.get("id"), ciphertext)
+        self.assertEqual(message, unwrapped)
+
+    def test_wrap_unwrap_with_aad(self):
+        # create a key to be used for test
+        self.key = self.kp.create(name="test-key", root=True)
+        self.addCleanup(self.kp.delete, self.key.get("id"))
+        # wrap
+        message = b"This is a really important message."
+        wrapped = self.kp.wrap(self.key.get("id"), message, aad=["python-keyprotect"])
+        ciphertext = wrapped.get("ciphertext")
+        # unwrap
+        unwrapped = self.kp.unwrap(
+            self.key.get("id"), ciphertext, aad=["python-keyprotect"]
+        )
+        self.assertEqual(message, unwrapped)
+
     def test_disable_enable_key(self):
         # create a key to be used for test
         self.key = self.kp.create(name="test-key", root=True)
@@ -134,22 +213,49 @@ class KeyProtectTestCase(unittest.TestCase):
             allowed_network_enable=True, network_type="public-and-private"
         )
 
+        # set instance metrics policy
+        self.kp.set_instance_metrics_policy(metrics_enable=True)
+
+        # set instance keyCreateImportAccess policy
+        self.kp.set_instance_key_create_import_access_policy(
+            key_create_import_access_enable=True,
+            create_root_key=True,
+            create_standard_key=True,
+            import_root_key=True,
+            import_standard_key=True,
+            enforce_token=False,
+        )
+
         # get instance policies
         resp = self.kp.get_instance_policies()
-        valid_policy_types = ["dualAuthDelete", "allowedNetwork"]
-        self.assertIn(resp["resources"][0]["policy_type"], valid_policy_types)
-        self.assertIn(resp["resources"][1]["policy_type"], valid_policy_types)
 
-        self.assertEqual(len(resp["resources"]), 2)
+        self.assertEqual(len(resp["resources"]), 4)
         for resource in resp["resources"]:
             if "dualAuthDelete" in resource["policy_type"]:
                 self.assertFalse(resource["policy_data"]["enabled"])
-            else:
+            elif "allowedNetwork" in resource["policy_type"]:
                 self.assertTrue(resource["policy_data"]["enabled"])
                 self.assertEqual(
                     resource["policy_data"]["attributes"]["allowed_network"],
                     "public-and-private",
                 )
+            elif "metrics" in resource["policy_type"]:
+                self.assertTrue(resource["policy_data"]["enabled"])
+            elif "keyCreateImportAccess" in resource["policy_type"]:
+                self.assertTrue(resource["policy_data"]["enabled"])
+                self.assertTrue(
+                    resource["policy_data"]["attributes"]["create_root_key"]
+                )
+                self.assertTrue(
+                    resource["policy_data"]["attributes"]["create_standard_key"]
+                )
+                self.assertTrue(
+                    resource["policy_data"]["attributes"]["import_root_key"]
+                )
+                self.assertTrue(
+                    resource["policy_data"]["attributes"]["import_standard_key"]
+                )
+                self.assertFalse(resource["policy_data"]["attributes"]["enforce_token"])
 
 
 if __name__ == "__main__":
