@@ -572,7 +572,7 @@ class KeyProtect(BaseClient):
             data["resources"][0]["payload"] = base64.b64encode(payload).decode("utf-8")
 
         # creates a new key with alias name. A key can have a maximum of 5 alias names
-        if alias_list is not None:
+        if alias_list:
             if len(alias_list) > 5:
                 raise ValueError("A key can not have more than 5 alias names")
             else:
