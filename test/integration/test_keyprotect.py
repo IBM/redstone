@@ -257,6 +257,54 @@ class KeyProtectTestCase(unittest.TestCase):
                 )
                 self.assertFalse(resource["policy_data"]["attributes"]["enforce_token"])
 
+    def test_set_keyring(self):
+        # create a key to be used for test, the key will by default be created in the 'default' key ring
+        self.key = self.kp.create(name="test-key", root=True)
+        key_id = self.key.get("id")
+        self.addCleanup(self.kp.delete, key_id)
+
+        # create a key ring to be used for test
+        new_key_ring_id = "testKeyRingIdPython"
+        self.kp.create_key_ring(new_key_ring_id)
+        self.addCleanup(self.kp.delete_key_ring, new_key_ring_id)
+
+        # transfer key to associate with new key ring
+        self.kp.set_key_ring(
+            key_id=key_id, key_ring_id="default", new_key_ring_id=new_key_ring_id
+        )
+        resp = self.kp.get_key(key_id_or_alias=key_id)
+        self.assertEqual(resp["keyRingID"], "testKeyRingIdPython")
+
+        # transfer key back to 'default' key ring so that the new key ring can be deleted
+        self.kp.set_key_ring(
+            key_id=key_id, key_ring_id=new_key_ring_id, new_key_ring_id="default"
+        )
+
+    # def test_purge_key_success(self):
+    #     # use a key that was deleted more than 4 hours ago
+    #     key_id = "<key_id for a key that was deleted more than 4 hours ago>"
+    #     resp = self.kp.purge_key(key_id=key_id)
+    #     self.assertEqual(resp, None)
+
+    def test_purge_key_fail_too_early(self):
+        # create a key to be used for test
+        self.key = self.kp.create(name="test-key", root=True)
+        key_id = self.key.get("id")
+        # delete the key
+        self.kp.delete(key_id)
+        with self.assertRaises(redstone.client.KeyProtect.KeyProtectError) as cm:
+            self.kp.purge_key(key_id=key_id)
+        self.assertIn("REQ_TOO_EARLY_ERR", str(cm.exception))
+
+    def test_purge_key_fail_invalid_state(self):
+        # create a key to be used for test
+        self.key = self.kp.create(name="test-key", root=True)
+        key_id = self.key.get("id")
+        self.addCleanup(self.kp.delete, key_id)
+        with self.assertRaises(redstone.client.KeyProtect.KeyProtectError) as cm:
+            self.kp.purge_key(key_id=key_id)
+        self.assertIn("KEY_ACTION_INVALID_STATE_ERR", str(cm.exception))
+
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
