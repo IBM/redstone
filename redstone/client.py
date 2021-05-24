@@ -983,9 +983,34 @@ class KeyProtect(BaseClient):
 
         https://cloud.ibm.com/apidocs/key-protect#getinstancepolicy
         """
-        resp = self.session.get("%s/api/v2/instance/policies" % (self.endpoint_url))
+        resp = self.session.get("%s/api/v2/instance/policies" % self.endpoint_url)
         self._validate_resp(resp)
         return resp.json()
+
+    def set_key_ring(self, key_id: str, key_ring_id: str, new_key_ring_id: str):
+        """
+        Transfers a key associated with one key ring to another key ring
+
+        https://cloud.ibm.com/apidocs/key-protect#patchkey
+        """
+        resp = self.session.patch(
+            "%s/api/v2/keys/%s" % (self.endpoint_url, key_id),
+            json={"keyRingID": new_key_ring_id},
+            headers={"X-Kms-Key-Ring": key_ring_id},
+        )
+        self._validate_resp(resp)
+
+    def purge_key(self, key_id: str):
+        """
+        Purge key method shreds all the metadata and registrations associated with a key that has been
+        deleted. The purge operation is allowed to be performed on a key from 4 hours after its deletion
+
+        https://cloud.ibm.com/apidocs/key-protect#purgekey
+        """
+        resp = self.session.delete(
+            "%s/api/v2/keys/%s/purge" % (self.endpoint_url, key_id)
+        )
+        self._validate_resp(resp)
 
     # deprecated methods
     keys = list_keys

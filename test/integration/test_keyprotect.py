@@ -65,16 +65,16 @@ class KeyProtectTestCase(unittest.TestCase):
 
     def test_get_key(self):
         # create a key to be used for test
-        self.key = self.kp.create(name="test-key", root=True)
-        self.addCleanup(self.kp.delete, self.key.get("id"))
-        resp = self.kp.get_key(key_id_or_alias=self.key.get("id"))
+        key = self.kp.create(name="test-key", root=True)
+        self.addCleanup(self.kp.delete, key.get("id"))
+        resp = self.kp.get_key(key_id_or_alias=key.get("id"))
         self.assertEqual(resp["state"], 1)
         self.assertEqual(resp["name"], "test-key")
 
     def test_get_key_using_alias(self):
         # create a key to be used for test
-        self.key = self.kp.create(name="test-key", root=True, alias_list=["key_alias"])
-        self.addCleanup(self.kp.delete, self.key.get("id"))
+        key = self.kp.create(name="test-key", root=True, alias_list=["key_alias"])
+        self.addCleanup(self.kp.delete, key.get("id"))
         resp = self.kp.get_key(key_id_or_alias="key_alias")
         self.assertEqual(resp["state"], 1)
         self.assertEqual(resp["name"], "test-key")
@@ -82,45 +82,43 @@ class KeyProtectTestCase(unittest.TestCase):
 
     def test_wrap_unwrap(self):
         # create a key to be used for test
-        self.key = self.kp.create(name="test-key", root=True)
-        self.addCleanup(self.kp.delete, self.key.get("id"))
+        key = self.kp.create(name="test-key", root=True)
+        self.addCleanup(self.kp.delete, key.get("id"))
         # wrap
         message = b"This is a really important message."
-        wrapped = self.kp.wrap(self.key.get("id"), message)
+        wrapped = self.kp.wrap(key.get("id"), message)
         ciphertext = wrapped.get("ciphertext")
         # unwrap
-        unwrapped = self.kp.unwrap(self.key.get("id"), ciphertext)
+        unwrapped = self.kp.unwrap(key.get("id"), ciphertext)
         self.assertEqual(message, unwrapped)
 
     def test_wrap_unwrap_with_aad(self):
         # create a key to be used for test
-        self.key = self.kp.create(name="test-key", root=True)
-        self.addCleanup(self.kp.delete, self.key.get("id"))
+        key = self.kp.create(name="test-key", root=True)
+        self.addCleanup(self.kp.delete, key.get("id"))
         # wrap
         message = b"This is a really important message."
-        wrapped = self.kp.wrap(self.key.get("id"), message, aad=["python-keyprotect"])
+        wrapped = self.kp.wrap(key.get("id"), message, aad=["python-keyprotect"])
         ciphertext = wrapped.get("ciphertext")
         # unwrap
-        unwrapped = self.kp.unwrap(
-            self.key.get("id"), ciphertext, aad=["python-keyprotect"]
-        )
+        unwrapped = self.kp.unwrap(key.get("id"), ciphertext, aad=["python-keyprotect"])
         self.assertEqual(message, unwrapped)
 
     def test_disable_enable_key(self):
         # create a key to be used for test
-        self.key = self.kp.create(name="test-key", root=True)
-        self.addCleanup(self.kp.delete, self.key.get("id"))
+        key = self.kp.create(name="test-key", root=True)
+        self.addCleanup(self.kp.delete, key.get("id"))
 
         # disable
-        self.kp.disable_key(self.key.get("id"))
-        resp = self.kp.get(self.key.get("id"))
+        self.kp.disable_key(key.get("id"))
+        resp = self.kp.get(key.get("id"))
         self.assertEqual(resp["state"], 2)
 
         # enable, must wait 30 sec or more before sending an enable
         time.sleep(30)
 
-        self.kp.enable_key(self.key.get("id"))
-        resp = self.kp.get(self.key.get("id"))
+        self.kp.enable_key(key.get("id"))
+        resp = self.kp.get(key.get("id"))
         self.assertEqual(resp["state"], 1)
 
     def test_key_ring(self):
@@ -149,30 +147,30 @@ class KeyProtectTestCase(unittest.TestCase):
 
     def test_key_alias(self):
         # create a key to be used for test
-        self.key = self.kp.create(name="test-key", root=True)
-        self.addCleanup(self.kp.delete, self.key.get("id"))
+        key = self.kp.create(name="test-key", root=True)
+        self.addCleanup(self.kp.delete, key.get("id"))
 
         # test creating key alias
-        resp = self.kp.create_key_alias(self.key["id"], "testKeyAlias")
-        self.assertEqual(resp["resources"][0]["keyId"], self.key["id"])
+        resp = self.kp.create_key_alias(key["id"], "testKeyAlias")
+        self.assertEqual(resp["resources"][0]["keyId"], key["id"])
         self.assertEqual(resp["resources"][0]["alias"], "testKeyAlias")
 
         # test getting key by using the key alias
         resp = self.kp.get("testKeyAlias")
-        self.assertEqual(resp["id"], self.key["id"])
+        self.assertEqual(resp["id"], key["id"])
         self.assertEqual(resp["aliases"][0], "testKeyAlias")
 
         # test deleting key alias
-        resp = self.kp.delete_key_alias(self.key["id"], "testKeyAlias")
+        resp = self.kp.delete_key_alias(key["id"], "testKeyAlias")
         self.assertEqual(resp, None)
 
     def test_get_registrations(self):
         # create a key to be used for test
-        self.key = self.kp.create(name="test-key", root=True)
-        self.addCleanup(self.kp.delete, self.key.get("id"))
+        key = self.kp.create(name="test-key", root=True)
+        self.addCleanup(self.kp.delete, key.get("id"))
 
         # get registrations associated with a key
-        resp1 = self.kp.get_registrations(self.key["id"])
+        resp1 = self.kp.get_registrations(key["id"])
         self.assertEqual(resp1["metadata"]["collectionTotal"], 0)
 
         #  get registrations associated with an instance
@@ -183,19 +181,19 @@ class KeyProtectTestCase(unittest.TestCase):
 
     def test_key_policies(self):
         # create a key to be used for test
-        self.key = self.kp.create(name="test-key", root=True)
-        self.addCleanup(self.kp.delete, self.key.get("id"))
+        key = self.kp.create(name="test-key", root=True)
+        self.addCleanup(self.kp.delete, key.get("id"))
 
         # test key rotation policy
-        resp = self.kp.set_key_rotation_policy(self.key["id"], rotation_interval=2)
+        resp = self.kp.set_key_rotation_policy(key["id"], rotation_interval=2)
         self.assertEqual(resp["resources"][0]["rotation"]["interval_month"], 2)
 
         # test key dual auth delete policy, set to False so that it can be cleaned up
-        resp = self.kp.set_key_dual_auth_policy(self.key["id"], dual_auth_enable=False)
+        resp = self.kp.set_key_dual_auth_policy(key["id"], dual_auth_enable=False)
         self.assertFalse(resp["resources"][0]["dualAuthDelete"]["enabled"])
 
         # test get key policies
-        resp = self.kp.get_key_policies(self.key["id"])
+        resp = self.kp.get_key_policies(key["id"])
 
         self.assertEqual(len(resp["resources"]), 2)
         for resource in resp["resources"]:
@@ -256,6 +254,42 @@ class KeyProtectTestCase(unittest.TestCase):
                     resource["policy_data"]["attributes"]["import_standard_key"]
                 )
                 self.assertFalse(resource["policy_data"]["attributes"]["enforce_token"])
+
+    def test_set_keyring(self):
+        # create a key to be used for test, the key will by default be created in the 'default' key ring
+        key = self.kp.create(name="test-key", root=True)
+        key_id = key.get("id")
+        self.addCleanup(self.kp.delete, key_id)
+
+        # create a key ring to be used for test
+        new_key_ring_id = "testKeyRingIdPython"
+        self.kp.create_key_ring(new_key_ring_id)
+
+        # transfer key to associate with new key ring
+        self.kp.set_key_ring(
+            key_id=key_id, key_ring_id="default", new_key_ring_id=new_key_ring_id
+        )
+        resp = self.kp.get_key(key_id_or_alias=key_id)
+        self.assertEqual(resp["keyRingID"], "testKeyRingIdPython")
+
+    def test_purge_key_fail_too_early(self):
+        # create a key to be used for test
+        key = self.kp.create(name="test-key", root=True)
+        key_id = key.get("id")
+        # delete the key
+        self.kp.delete(key_id)
+        with self.assertRaises(redstone.client.KeyProtect.KeyProtectError) as cm:
+            self.kp.purge_key(key_id=key_id)
+        self.assertIn("REQ_TOO_EARLY_ERR", str(cm.exception))
+
+    def test_purge_key_fail_invalid_state(self):
+        # create a key to be used for test
+        key = self.kp.create(name="test-key", root=True)
+        key_id = key.get("id")
+        self.addCleanup(self.kp.delete, key_id)
+        with self.assertRaises(redstone.client.KeyProtect.KeyProtectError) as cm:
+            self.kp.purge_key(key_id=key_id)
+        self.assertIn("KEY_ACTION_INVALID_STATE_ERR", str(cm.exception))
 
 
 if __name__ == "__main__":
