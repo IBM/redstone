@@ -1,6 +1,9 @@
-.PHONY: dist test publish
+.PHONY: dist test doctest publish
 
 test:
+	python3 -m unittest discover -v test.unit.redstone
+
+doctest:
 	python3 -m doctest -o ELLIPSIS README.md
 
 dist:
