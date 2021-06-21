@@ -21,7 +21,7 @@ class TokenManagerTestCase(unittest.TestCase):
         ite = p1.start()
         ref_tok = p2.start()
         req_tok = p3.start()
-        irte = p4.start()
+        _ = p4.start()
         self.addCleanup(p1.stop)
         self.addCleanup(p2.stop)
         self.addCleanup(p3.stop)
