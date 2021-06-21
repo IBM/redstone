@@ -57,11 +57,12 @@ class TokenManager(object):
         iam_token = tokman.get_token()
     """
 
-    def __init__(self, api_key, iam_endpoint=None):
+    def __init__(self, api_key, iam_endpoint=None, use_refresh_token=False):
         self.api_key = api_key
         self.iam_endpoint = iam_endpoint
         self._token_info = {}
         self._lock = threading.RLock()
+        self._use_refresh_token = use_refresh_token
 
     def get_token(self) -> str:
         """
@@ -76,7 +77,10 @@ class TokenManager(object):
             ):
                 self._request_token()
             elif self.is_token_expired():
-                self._refresh_token()
+                if self._use_refresh_token:
+                    self._refresh_token()
+                else:
+                    self._request_token()
 
             return self._token_info.get("access_token")
 
@@ -95,7 +99,7 @@ class TokenManager(object):
         if isinstance(token_resp, dict):
             self._token_info = token_resp
         else:
-            raise Exception("Error getting refreshing token: %s" % token_resp)
+            raise Exception("Error refreshing token: %s" % token_resp)
 
     def is_token_expired(self):
         """
@@ -105,7 +109,8 @@ class TokenManager(object):
             bool, True if the token needs to be refreshed, False otherwise
         """
         # refresh even with 20% time still remainig,
-        # this should be 12 minutes before expiration for 1h tokens
+        # should be 12 minutes before expiry for 1h tokens
+        # and 4 minutes before expiry for 20m tokens
         token_expire_time = self._token_info.get("expiration", 0)
         token_expires_in = self._token_info.get("expires_in", 0)
         return time.time() >= (token_expire_time - (0.2 * token_expires_in))
