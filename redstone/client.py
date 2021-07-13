@@ -626,6 +626,20 @@ class KeyProtect(BaseClient):
 
         return self._action(key_id, "rotate", data)
 
+    def restore_key(self, key_id: str):
+        """
+        Restore a key.
+
+        RestoreKey method reverts a delete key status to active key
+        This method performs restore of any key from destroyed state to active state.
+
+        API Docs: https://cloud.ibm.com/apidocs/key-protect#restorekey
+        """
+        resp = self.session.post(
+            "%s/api/v2/keys/%s/restore" % (self.endpoint_url, key_id)
+        )
+        self._validate_resp(resp)
+
     def disable_key(self, key_id: str):
         """
         Disable a key.
