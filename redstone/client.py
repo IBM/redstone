@@ -630,8 +630,8 @@ class KeyProtect(BaseClient):
         """
         Restore a key.
 
-        RestoreKey method reverts a delete key status to active key
-        This method performs restore of any key from destroyed state to active state.
+        The RestoreKey method reverts a key's status from `Destroyed` to `Active`.
+        This method cannot be used to restore a key that has been purged.
 
         API Docs: https://cloud.ibm.com/apidocs/key-protect#restorekey
         """
