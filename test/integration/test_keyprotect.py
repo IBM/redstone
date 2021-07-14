@@ -121,6 +121,26 @@ class KeyProtectTestCase(unittest.TestCase):
         resp = self.kp.get(key.get("id"))
         self.assertEqual(resp["state"], 1)
 
+    def test_restore_key(self):
+        # create a key to be used for test
+        key = self.kp.create(name="test-key", root=True)
+        key_id = key.get("id")
+        self.addCleanup(self.kp.delete, key_id)
+
+        # delete the key
+        self.kp.delete(key_id)
+        resp = self.kp.get(key_id)
+        # state Destroyed = 5
+        self.assertEqual(resp["state"], 5)
+
+        # restore, must wait 30 sec or more before sending an restore
+        time.sleep(30)
+
+        self.kp.restore_key(key_id)
+        resp = self.kp.get(key_id)
+        # state Active = 1
+        self.assertEqual(resp["state"], 1)
+
     def test_key_ring(self):
         # test creating key ring
         resp = self.kp.create_key_ring("testKeyRingIdPython")
