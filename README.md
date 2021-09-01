@@ -1,7 +1,10 @@
 # redstone - A Pythonic IBM Cloud SDK
 
-[![Documentation Status](https://readthedocs.org/projects/redstone-py/badge/?version=latest)](https://redstone-py.readthedocs.io/en/latest/?badge=latest)
+[![PyPi](https://img.shields.io/pypi/v/redstone.svg)](https://pypi.org/project/redstone)
+[![Downloads](https://static.pepy.tech/personalized-badge/redstone?period=total&units=international_system&left_color=grey&right_color=orange&left_text=Downloads)](https://pepy.tech/project/redstone)
+[![License](https://img.shields.io/badge/License-Apache%202.0-green.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Build Status](https://travis-ci.com/IBM/redstone.svg?branch=master)](https://travis-ci.com/IBM/redstone)
+[![Documentation Status](https://readthedocs.org/projects/redstone-py/badge/?version=latest)](https://redstone-py.readthedocs.io/en/latest/?badge=latest)
 
 Redstone is a Python library for interacting with IBM Cloud services.
 
