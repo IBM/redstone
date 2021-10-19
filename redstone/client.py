@@ -670,6 +670,18 @@ class KeyProtect(BaseClient):
         )
         self._validate_resp(resp)
 
+    def sync_associated_resources(self, key_id: str):
+        """
+        Executes the sync request which verifies and updates the resources associated with the key.
+
+        API Docs: https://cloud.ibm.com/apidocs/key-protect#syncassociatedresources
+        """
+
+        resp = self.session.post(
+            "%s/api/v2/keys/%s/actions/sync" % (self.endpoint_url, key_id),
+        )
+        self._validate_resp(resp)
+
     def create_key_ring(self, key_ring_id: str):
         """
         Create a key ring in the instance with the specified name.
