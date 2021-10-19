@@ -322,6 +322,7 @@ class KeyProtectTestCase(unittest.TestCase):
             self.kp.sync_associated_resources(key_id=key_id)
         self.assertIn("REQ_TOO_EARLY_ERR", str(cm.exception))
 
+
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     unittest.main()
