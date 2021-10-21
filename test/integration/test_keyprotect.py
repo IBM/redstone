@@ -311,6 +311,17 @@ class KeyProtectTestCase(unittest.TestCase):
             self.kp.purge_key(key_id=key_id)
         self.assertIn("KEY_ACTION_INVALID_STATE_ERR", str(cm.exception))
 
+    def test_sync_resources_fail_too_early(self):
+        # create a key to be used for test
+        key = self.kp.create(name="test-key", root=True)
+        key_id = key.get("id")
+        # delete the key
+        self.kp.delete(key_id)
+
+        with self.assertRaises(redstone.client.KeyProtect.KeyProtectError) as cm:
+            self.kp.sync_associated_resources(key_id=key_id)
+        self.assertIn("REQ_TOO_EARLY_ERR", str(cm.exception))
+
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
