@@ -509,7 +509,7 @@ class KeyProtect(BaseClient):
         self.session.headers["Bluemix-Instance"] = self.service_instance_id
 
     def endpoint_for_region(self, region):
-        return "https://keyprotect.{0}.bluemix.net".format(region)
+        return "https://{0}.kms.cloud.ibm.com".format(region)
 
     def _validate_resp(self, resp):
         def log_resp(resp):
