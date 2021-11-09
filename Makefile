@@ -9,9 +9,9 @@ doctest:
 dist:
 	python setup.py sdist bdist_wheel
 
-publish:
+publish: dist
 	pip install 'twine>=1.5.0'
-	twine upload dist/*
+	twine upload --repository redstone --skip-existing dist/*
 	rm -fr build dist .egg *.egg-info
 
 fmt: black
