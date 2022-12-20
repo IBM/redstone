@@ -58,12 +58,16 @@ class BaseClient(object):
         verify=True,
         endpoint_url=None,
         credentials=None,
+        headers=None,
     ):
 
         self.session = requests.Session()
         self.session.verify = verify
 
         self.credentials = credentials
+        # Custom Header Input check
+        if headers:
+            self.session.headers = headers
         # respect old path if user builds us directly with API key
         if iam_api_key:
             LOG.warn(
