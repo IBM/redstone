@@ -27,7 +27,7 @@ setup(
     long_description=long_desc,
     long_description_content_type="text/markdown",
     packages=find_packages(),
-    install_requires=["requests[security]", "cryptography"],
+    install_requires=["requests[security]", "cryptography>=39.0.1"],
     extras_require={
         "docs": ["sphinx>=3.1", "sphinx_rtd_theme"],
     },
