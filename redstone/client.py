@@ -632,11 +632,12 @@ class KeyProtect(BaseClient):
 
     def _action(self, key_id, action, jsonable):
         resp = self.session.post(
-            "%s/api/v2/keys/%s" % (self.endpoint_url, key_id),
-            params={"action": action},
+            "%s/api/v2/keys/%s/actions/%s" % (self.endpoint_url, key_id, action),
             json=jsonable,
         )
         self._validate_resp(resp)
+        if resp.status_code == 204:
+            return None
         return resp.json()
 
     def wrap(self, key_id, plaintext, aad=None):
@@ -662,6 +663,19 @@ class KeyProtect(BaseClient):
 
         resp = self._action(key_id, "unwrap", data)
         return base64.b64decode(resp["plaintext"].encode("utf-8"))
+
+    def rewrap(self, key_id, ciphertext, aad=None):
+        # json body needs to be a UTF-8 string
+        if isinstance(ciphertext, bytes):
+            ciphertext = ciphertext.decode("utf-8")
+
+        data = {"ciphertext": ciphertext}
+
+        if aad:
+            data["aad"] = aad
+
+        resp = self._action(key_id, "unwrap", data)
+        return resp
 
     def rotate_key(self, key_id, payload=None):
         data = None
