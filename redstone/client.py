@@ -670,7 +670,7 @@ class KeyProtect(BaseClient):
         if aad:
             data["aad"] = aad
 
-        resp = self._action(key_id, "unwrap", data)
+        resp = self._action(key_id, "rewrap", data)
         return resp
 
     def rotate_key(self, key_id, payload=None):
