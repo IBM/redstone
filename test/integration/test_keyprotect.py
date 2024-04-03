@@ -113,7 +113,7 @@ class KeyProtectTestCase(unittest.TestCase):
         wrapped = self.kp.wrap(key.get("id"), message)
         ciphertext = wrapped.get("ciphertext")
         # rotate
-        self.kp.rotate_key(key.get("id")) 
+        self.kp.rotate_key(key.get("id"))
         # rewrap
         rewrapped = self.kp.rewrap(key.get("id"), ciphertext)
         ciphertext = rewrapped.get("ciphertext")
