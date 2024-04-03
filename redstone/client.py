@@ -49,6 +49,15 @@ class TokenAuth(requests.auth.AuthBase):
         return req
 
 
+class Session(requests.Session):
+    def prepare_request(self, request):
+        r = super().prepare_request(request)
+        for hook in self._pre_send_hooks:
+            if hook:
+                r = hook(r)
+        return r
+
+
 class BaseClient(object):
     def __init__(
         self,
@@ -60,7 +69,7 @@ class BaseClient(object):
         credentials=None,
     ):
 
-        self.session = requests.Session()
+        self.session = Session()
         self.session.verify = verify
 
         self.credentials = credentials
@@ -82,6 +91,41 @@ class BaseClient(object):
             self.endpoint_url = endpoint_url
         else:
             self.endpoint_url = self.endpoint_for_region(region)
+
+        self.session._pre_send_hooks = []
+
+    def set_pre_send_fn(self, fn):
+        """
+        Sets the provided function as a hook to be called per request,
+        just before the requests are sent.
+
+        This allows for modifying any aspects of the requests before they
+        are sent, or for recording/logging/tracing purposes.
+
+        The function must handle its own exceptions, and must return a
+        `requests.Request` object.
+
+        If `fn` resolves to false-y then it will not be called. This
+        can be used to remove any hook currently set, by calling
+        `set_pre_send_fn` with `None` type.
+
+        Example::
+
+            def add_header(req):
+                req.headers["X-Trace-ID"] = "my-tracing-id"
+                return req
+
+            client.set_pre_send_fn(add_header)
+            # X-Trace-ID will be set for all requests from this client object
+            for i in client.list_instances():
+                print(i)
+
+            ...
+        """
+        if fn is not None:
+            self.session._pre_send_hooks = [fn]
+        else:
+            self.session._pre_send_hooks = []
 
 
 class IKS(BaseClient):
@@ -588,12 +632,11 @@ class KeyProtect(BaseClient):
 
     def _action(self, key_id, action, jsonable):
         resp = self.session.post(
-            "%s/api/v2/keys/%s/actions/%s" % (self.endpoint_url, key_id, action),
+            "%s/api/v2/keys/%s" % (self.endpoint_url, key_id),
+            params={"action": action},
             json=jsonable,
         )
         self._validate_resp(resp)
-        if resp.status_code == 204:
-            return None
         return resp.json()
 
     def wrap(self, key_id, plaintext, aad=None):
@@ -619,19 +662,6 @@ class KeyProtect(BaseClient):
 
         resp = self._action(key_id, "unwrap", data)
         return base64.b64decode(resp["plaintext"].encode("utf-8"))
-
-    def rewrap(self, key_id, ciphertext, aad=None):
-        # json body needs to be a UTF-8 string
-        if isinstance(ciphertext, bytes):
-            ciphertext = ciphertext.decode("utf-8")
-
-        data = {"ciphertext": ciphertext}
-
-        if aad:
-            data["aad"] = aad
-
-        resp = self._action(key_id, "unwrap", data)
-        return resp
 
     def rotate_key(self, key_id, payload=None):
         data = None
