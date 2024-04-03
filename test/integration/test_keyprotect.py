@@ -104,6 +104,23 @@ class KeyProtectTestCase(unittest.TestCase):
         unwrapped = self.kp.unwrap(key.get("id"), ciphertext, aad=["python-keyprotect"])
         self.assertEqual(message, unwrapped)
 
+    def test_wrap_rewrap_unwrap(self):
+        # create a key to be used for test
+        key = self.kp.create(name="test-key", root=True)
+        self.addCleanup(self.kp.delete, key.get("id"))
+        # wrap
+        message = b"This is a really important message."
+        wrapped = self.kp.wrap(key.get("id"), message)
+        ciphertext = wrapped.get("ciphertext")
+        # rotate
+        self.kp.rotate_key(key.get("id")) 
+        # rewrap
+        rewrapped = self.kp.rewrap(key.get("id"), ciphertext)
+        ciphertext = rewrapped.get("ciphertext")
+        # unwrap
+        unwrapped = self.kp.unwrap(key.get("id"), ciphertext)
+        self.assertEqual(message, unwrapped)
+
     def test_disable_enable_key(self):
         # create a key to be used for test
         key = self.kp.create(name="test-key", root=True)
