@@ -68,7 +68,6 @@ class BaseClient(object):
         endpoint_url=None,
         credentials=None,
     ):
-
         self.session = Session()
         self.session.verify = verify
 
@@ -129,7 +128,6 @@ class BaseClient(object):
 
 
 class IKS(BaseClient):
-
     names = ["iks"]
 
     def __init__(self, *args, **kwargs):
@@ -445,7 +443,6 @@ class ResourceController(BaseClient):
         return resp.json().get("guid"), resp.json().get("id")
 
     def _create_instance_v1(self, name, region, resource_group_id, resource_plan_id):
-
         # seems like the target_crn is the region selector,
         # and its just the price plan ID with the region stuck at the end
         target_crn = (
@@ -594,7 +591,6 @@ class KeyProtect(BaseClient):
     def create_key(
         self, name, payload=None, raw_payload=None, root=False, alias_list=None
     ):
-
         data = {
             "metadata": {
                 "collectionType": "application/vnd.ibm.kms.key+json",
@@ -632,11 +628,12 @@ class KeyProtect(BaseClient):
 
     def _action(self, key_id, action, jsonable):
         resp = self.session.post(
-            "%s/api/v2/keys/%s" % (self.endpoint_url, key_id),
-            params={"action": action},
+            "%s/api/v2/keys/%s/actions/%s" % (self.endpoint_url, key_id, action),
             json=jsonable,
         )
         self._validate_resp(resp)
+        if resp.status_code == 204:
+            return None
         return resp.json()
 
     def wrap(self, key_id, plaintext, aad=None):
@@ -662,6 +659,19 @@ class KeyProtect(BaseClient):
 
         resp = self._action(key_id, "unwrap", data)
         return base64.b64decode(resp["plaintext"].encode("utf-8"))
+
+    def rewrap(self, key_id, ciphertext, aad=None):
+        # json body needs to be a UTF-8 string
+        if isinstance(ciphertext, bytes):
+            ciphertext = ciphertext.decode("utf-8")
+
+        data = {"ciphertext": ciphertext}
+
+        if aad:
+            data["aad"] = aad
+
+        resp = self._action(key_id, "rewrap", data)
+        return resp
 
     def rotate_key(self, key_id, payload=None):
         data = None
@@ -856,7 +866,6 @@ class KeyProtect(BaseClient):
         self._validate_resp(resp)
 
     def _set_policy(self, resources_list, key_id=None):
-
         collection_total = len(resources_list)
         data = {
             "metadata": {
@@ -1100,7 +1109,6 @@ class CISAuth(requests.auth.AuthBase):
 
 
 class CIS(BaseClient):
-
     names = ["cis"]
 
     def __init__(self, *args, **kwargs):
