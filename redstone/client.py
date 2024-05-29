@@ -1091,30 +1091,27 @@ class KeyProtect(BaseClient):
         )
         self._validate_resp(resp)
 
-    def kmip_adapter_create(self, profile : str, profile_data : dict, name : str = None):
+    def kmip_adapter_create(self, profile: str, profile_data: dict, name: str = None):
         """
         API Docs: https://cloud.ibm.com/apidocs/key-protect#create-kmip-adapter
         """
-        adapter_to_create = {
-            "profile": profile,
-            "profile_data": profile_data
-        }
+        adapter_to_create = {"profile": profile, "profile_data": profile_data}
         if name is not None:
             adapter_to_create["name"] = name
         resp = self.session.post(
             f"{self.endpoint_url}/api/v2/kmip_adapters",
-            data = {
+            data={
                 "metadata": {
                     "collectionTotal": 1,
-                    "collectionType": "application/vnd.ibm.kms.kmip_adapter+json"
+                    "collectionType": "application/vnd.ibm.kms.kmip_adapter+json",
                 },
-                "resources": [adapter_to_create]
-            }
+                "resources": [adapter_to_create],
+            },
         )
         self._validate_resp(resp)
         return resp.json().get("resources")[0]
-    
-    def kmip_adapter_delete(self, adapter_name_or_id : str):
+
+    def kmip_adapter_delete(self, adapter_name_or_id: str):
         """
         API Docs: https://cloud.ibm.com/apidocs/key-protect#delete-kmip-adapter
         """
@@ -1123,7 +1120,7 @@ class KeyProtect(BaseClient):
         )
         self._validate_resp(resp)
 
-    def kmip_adapter_get(self,adapter_name_or_id : str):
+    def kmip_adapter_get(self, adapter_name_or_id: str):
         """
         API Docs: https://cloud.ibm.com/apidocs/key-protect#get-kmip-adapter
         """
@@ -1132,38 +1129,51 @@ class KeyProtect(BaseClient):
         )
         self._validate_resp(resp)
         return resp.json().get("resources")[0]
-    
-    def kmip_adapter_list(self, limit : int = 200, offset : int = 0, show_total : bool = False, filters : dict = None):
+
+    def kmip_adapter_list(
+        self,
+        limit: int = 200,
+        offset: int = 0,
+        show_total: bool = False,
+        filters: dict = None,
+    ):
         """
         API Docs: https://cloud.ibm.com/apidocs/key-protect#get-kmip-adapters
         """
-        params = {
-            "limit": limit,
-            "offset": offset,
-            "totalCount": show_total
-        }
-        if filters is not None: 
+        params = {"limit": limit, "offset": offset, "totalCount": show_total}
+        if filters is not None:
             if "crk_id" in filters:
                 params["crk_id"] = filters["crk_id"]
         resp = self.session.get(
-            f"{self.endpoint_url}/api/v2/kmip_adapters",
-            params=params
+            f"{self.endpoint_url}/api/v2/kmip_adapters", params=params
         )
         self._validate_resp(resp)
         return resp.json()
 
-
-    def kmip_cert_create(self, adapter_name_or_id : str, cert_payload : str, ):
+    def kmip_cert_create(
+        self, adapter_name_or_id: str, cert_payload: str, cert_name: str = None
+    ):
         """
         API Docs: https://cloud.ibm.com/apidocs/key-protect#create-kmip-client-certificate
         """
+        cert_to_create = {"certificate": cert_payload}
+        if cert_name is not None:
+            cert_to_create["name"] = cert_name
+
         resp = self.session.post(
             f"{self.endpoint_url}/api/v2/kmip_adapters/{adapter_name_or_id}/certificates/",
+            data={
+                "metadata": {
+                    "collectionTotal": 1,
+                    "collectionType": "application/vnd.ibm.kms.kmip_adapter+json",
+                },
+                "resources": [cert_to_create],
+            },
         )
         self._validate_resp(resp)
         return resp.json().get("resources")[0]
 
-    def kmip_cert_delete(self, adapter_name_or_id : str, cert_name_or_id : str):
+    def kmip_cert_delete(self, adapter_name_or_id: str, cert_name_or_id: str):
         """
         API Docs: https://cloud.ibm.com/apidocs/key-protect#delete-kmip-client-certificate
         """
@@ -1172,7 +1182,7 @@ class KeyProtect(BaseClient):
         )
         self._validate_resp(resp)
 
-    def kmip_cert_get(self, adapter_name_or_id : str, cert_name_or_id : str):
+    def kmip_cert_get(self, adapter_name_or_id: str, cert_name_or_id: str):
         """
         API Docs: https://cloud.ibm.com/apidocs/key-protect#get-kmip-client-certificate
         """
@@ -1182,24 +1192,25 @@ class KeyProtect(BaseClient):
         self._validate_resp(resp)
         return resp.json().get("resources")[0]
 
-    def kmip_cert_list(self, adapter_name_or_id : str, limit : int = 200, offset : int = 0, show_total : bool = False):
+    def kmip_cert_list(
+        self,
+        adapter_name_or_id: str,
+        limit: int = 200,
+        offset: int = 0,
+        show_total: bool = False,
+    ):
         """
         API Docs: https://cloud.ibm.com/apidocs/key-protect#get-kmip-client-certificates
         """
-        params = {
-            "limit": limit,
-            "offset": offset,
-            "totalCount": show_total
-        }
+        params = {"limit": limit, "offset": offset, "totalCount": show_total}
         resp = self.session.get(
             f"{self.endpoint_url}/api/v2/kmip_adapters/{adapter_name_or_id}/certificates",
-            params=params
+            params=params,
         )
         self._validate_resp(resp)
         return resp.json()
 
-
-    def kmip_object_delete(self, adapter_name_or_id : str, obj_id : str):
+    def kmip_object_delete(self, adapter_name_or_id: str, obj_id: str):
         """
         API Docs: https://cloud.ibm.com/apidocs/key-protect#delete-kmip-object
         """
@@ -1208,7 +1219,7 @@ class KeyProtect(BaseClient):
         )
         self._validate_resp(resp)
 
-    def kmip_object_get(self, adapter_name_or_id : str, obj_id : str):
+    def kmip_object_get(self, adapter_name_or_id: str, obj_id: str):
         """
         API Docs: https://cloud.ibm.com/apidocs/key-protect#get-kmip-object
         """
@@ -1217,8 +1228,15 @@ class KeyProtect(BaseClient):
         )
         self._validate_resp(resp)
         return resp.json().get("resources")[0]
-    
-    def kmip_object_list(self, adapter_name_or_id : str, limit : int = 200, offset : int = 0, show_total : bool = False, state_filter : list = [1,2,3,4]):
+
+    def kmip_object_list(
+        self,
+        adapter_name_or_id: str,
+        limit: int = 200,
+        offset: int = 0,
+        show_total: bool = False,
+        state_filter: list = [1, 2, 3, 4],
+    ):
         """
         API Docs: https://cloud.ibm.com/apidocs/key-protect#get-kmip-objects
         """
@@ -1226,11 +1244,11 @@ class KeyProtect(BaseClient):
             "limit": limit,
             "offset": offset,
             "totalCount": show_total,
-            "state": state_filter
+            "state": state_filter,
         }
         resp = self.session.get(
             f"{self.endpoint_url}/api/v2/kmip_adapters/{adapter_name_or_id}/kmip_objects",
-            params=params
+            params=params,
         )
         self._validate_resp(resp)
         return resp.json()
