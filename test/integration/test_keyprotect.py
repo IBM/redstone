@@ -3,7 +3,7 @@ import time
 import unittest
 
 import redstone
-import self_signed_cert
+
 
 class KeyProtectTestCase(unittest.TestCase):
     @classmethod
