@@ -3,8 +3,7 @@ import time
 import unittest
 
 import redstone
-from test.integration.self_signed_cert import generate_selfsigned_cert
-
+import self_signed_cert
 
 class KeyProtectTestCase(unittest.TestCase):
     @classmethod
@@ -367,7 +366,7 @@ class KeyProtectTestCase(unittest.TestCase):
 
         cert_created = self.kp.kmip_cert_create(
             adapter_id,
-            generate_selfsigned_cert("www.test.ibm.com"),
+            self_signed_cert.generate_selfsigned_cert("www.kms.test.cloud.ibm.com"),
             adapter_id,
             "mycert",
         )
