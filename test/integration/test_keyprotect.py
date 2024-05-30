@@ -2,6 +2,8 @@ import logging
 import time
 import unittest
 
+import self_signed_cert
+
 import redstone
 
 
