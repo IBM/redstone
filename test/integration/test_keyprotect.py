@@ -1,4 +1,5 @@
 import logging
+import os
 import test.integration.self_signed_cert as self_signed_cert
 import time
 import unittest
@@ -310,6 +311,10 @@ class KeyProtectTestCase(unittest.TestCase):
         resp = self.kp.get_key(key_id_or_alias=key_id)
         self.assertEqual(resp["keyRingID"], "testKeyRingIdPython")
 
+    @unittest.skipUnless(
+            os.environ.get("RUN_PURGE_TESTS") == "true",
+            "Skipping purge tests"
+    )
     def test_purge_key_fail_too_early(self):
         # create a key to be used for test
         key = self.kp.create(name="test-key", root=True)
@@ -320,6 +325,10 @@ class KeyProtectTestCase(unittest.TestCase):
             self.kp.purge_key(key_id=key_id)
         self.assertIn("REQ_TOO_EARLY_ERR", str(cm.exception))
 
+    @unittest.skipUnless(
+            os.environ.get("RUN_PURGE_TESTS") == "true",
+            "Skipping purge tests"
+    )
     def test_purge_key_fail_invalid_state(self):
         # create a key to be used for test
         key = self.kp.create(name="test-key", root=True)
