@@ -17,6 +17,6 @@ install:
 script:
   - tox
   - python -m unittest test.unit.redstone.test_auth
-  - IBMCLOUD_API_KEY=$IBMCLOUD_API_KEY python -m unittest test.integration.test_resourcecontroller
-  - IBMCLOUD_API_KEY=$IBMCLOUD_API_KEY python -m unittest test.integration.test_keyprotect
+  - python -m unittest test.integration.test_resourcecontroller
+  - python -m unittest test.integration.test_keyprotect
 
