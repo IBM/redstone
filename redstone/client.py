@@ -1091,7 +1091,13 @@ class KeyProtect(BaseClient):
         )
         self._validate_resp(resp)
 
-    def kmip_adapter_create(self, profile: str, profile_data: dict, name: str = None, description: str = None):
+    def kmip_adapter_create(
+        self,
+        profile: str,
+        profile_data: dict,
+        name: str = None,
+        description: str = None,
+    ):
         """
         API Docs: https://cloud.ibm.com/apidocs/key-protect#create-kmip-adapter
         """
