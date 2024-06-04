@@ -1,6 +1,7 @@
+import logging
+
 import test.integration.self_signed_cert as self_signed_cert
 
-import logging
 import time
 import unittest
 
