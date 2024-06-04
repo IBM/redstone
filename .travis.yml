@@ -15,9 +15,8 @@ install:
   - pip install -r requirements.txt
 
 script:
-  - "echo ${#IBMCLOUD_API_KEY}"
   - tox
   - python -m unittest test.unit.redstone.test_auth
-  - python -m unittest test.integration.test_resourcecontroller
-  - python -m unittest test.integration.test_keyprotect
+  - IBMCLOUD_API_KEY=$IBMCLOUD_API_KEY python -m unittest test.integration.test_resourcecontroller
+  - IBMCLOUD_API_KEY=$IBMCLOUD_API_KEY python -m unittest test.integration.test_keyprotect
 
