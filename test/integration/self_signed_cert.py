@@ -29,7 +29,7 @@ def generate_selfsigned_cert(hostname, key=None):
 
     # path_len=0 means this cert can only sign itself, not other certs.
     basic_contraints = x509.BasicConstraints(ca=True, path_length=0)
-    now = datetime.now(datetime.UTC)
+    now = datetime.utcnow()
     cert = (
         x509.CertificateBuilder()
         .subject_name(name)

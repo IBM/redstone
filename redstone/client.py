@@ -1091,16 +1091,18 @@ class KeyProtect(BaseClient):
         )
         self._validate_resp(resp)
 
-    def kmip_adapter_create(self, profile: str, profile_data: dict, name: str = None):
+    def kmip_adapter_create(self, profile: str, profile_data: dict, name: str = None, description: str = None):
         """
         API Docs: https://cloud.ibm.com/apidocs/key-protect#create-kmip-adapter
         """
         adapter_to_create = {"profile": profile, "profile_data": profile_data}
         if name is not None:
             adapter_to_create["name"] = name
+        if description is not None:
+            adapter_to_create["description"] = description
         resp = self.session.post(
             f"{self.endpoint_url}/api/v2/kmip_adapters",
-            data={
+            json={
                 "metadata": {
                     "collectionTotal": 1,
                     "collectionType": "application/vnd.ibm.kms.kmip_adapter+json",
@@ -1161,11 +1163,11 @@ class KeyProtect(BaseClient):
             cert_to_create["name"] = cert_name
 
         resp = self.session.post(
-            f"{self.endpoint_url}/api/v2/kmip_adapters/{adapter_name_or_id}/certificates/",
-            data={
+            f"{self.endpoint_url}/api/v2/kmip_adapters/{adapter_name_or_id}/certificates",
+            json={
                 "metadata": {
                     "collectionTotal": 1,
-                    "collectionType": "application/vnd.ibm.kms.kmip_adapter+json",
+                    "collectionType": "application/vnd.ibm.kms.kmip_client_certificate+json",
                 },
                 "resources": [cert_to_create],
             },

@@ -2,7 +2,7 @@ import logging
 import time
 import unittest
 
-import self_signed_cert
+import test.integration.self_signed_cert as self_signed_cert
 
 import redstone
 
@@ -343,7 +343,7 @@ class KeyProtectTestCase(unittest.TestCase):
 
     def test_kmip_happy_path(self):
         # create a key to be used for test
-        key = self.kp.create(name="test-key", root=True)
+        key = self.kp.create(name="py-sdk-test-key", root=True)
         key_id = key.get("id")
 
         adapter_created = self.kp.kmip_adapter_create(
@@ -352,8 +352,10 @@ class KeyProtectTestCase(unittest.TestCase):
                 "crk_id": key_id,
             },
             name="myadapter",
+            description="my description",
         )
         adapter_id = adapter_created.get("id")
+        self.addCleanup(self.kp.kmip_adapter_delete, adapter_id)
 
         self.assertEqual(adapter_created["profile"], "native_1.0")
 
@@ -362,14 +364,14 @@ class KeyProtectTestCase(unittest.TestCase):
         self.assertDictEqual(adapter_created, adapter_getted)
 
         adapters_list = self.kp.kmip_adapter_list(
-            filters={"crk_id": adapter_id},
+            filters={"crk_id": key_id},
         )
-        self.assertEqual(0, len(adapters_list.get("resources")))
-
+        self.assertEqual(1, len(adapters_list.get("resources")))
+        # print("mdtest-adapterid:", adapter_id)
         cert_created = self.kp.kmip_cert_create(
             adapter_id,
+            # adapter_created.get("name"),
             self_signed_cert.generate_selfsigned_cert("www.kms.test.cloud.ibm.com"),
-            adapter_id,
             "mycert",
         )
         cert_getted = self.kp.kmip_cert_get("myadapter", "mycert")
@@ -379,7 +381,6 @@ class KeyProtectTestCase(unittest.TestCase):
         self.assertEqual(1, len(certs_list.get("resources")))
 
         self.kp.kmip_cert_delete(adapter_id, cert_created.get("id"))
-        self.kp.kmip_adapter_delete(adapter_id)
 
 
 if __name__ == "__main__":
