@@ -312,8 +312,8 @@ class KeyProtectTestCase(unittest.TestCase):
         self.assertEqual(resp["keyRingID"], "testKeyRingIdPython")
 
     @unittest.skipUnless(
-            os.environ.get("RUN_PURGE_TESTS") == "true",
-            "Skipping purge tests"
+        os.environ.get("RUN_PURGE_TESTS") == "true",
+        "Skipping purge tests due to lacking permissions",
     )
     def test_purge_key_fail_too_early(self):
         # create a key to be used for test
@@ -326,8 +326,8 @@ class KeyProtectTestCase(unittest.TestCase):
         self.assertIn("REQ_TOO_EARLY_ERR", str(cm.exception))
 
     @unittest.skipUnless(
-            os.environ.get("RUN_PURGE_TESTS") == "true",
-            "Skipping purge tests"
+        os.environ.get("RUN_PURGE_TESTS") == "true",
+        "Skipping purge tests due to lacking permissions",
     )
     def test_purge_key_fail_invalid_state(self):
         # create a key to be used for test
