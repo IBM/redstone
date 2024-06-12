@@ -1,13 +1,12 @@
-**Title**: fix(build): PR Title
+**Title**: PR Title
 
 **Short Description**: Short explanation/description of PR (or issue/task)
 
 ## Checklist
 - [ ] I have performed a self-review of my changes
 - [ ] My code/changes are commented (especially hard-to-understand areas)
-- [ ] I have made sure that the PR title is named with (semantic release conventions)[https://semantic-release.gitbook.io/semantic-release#commit-message-format] where relevant.
-- [ ] I have tested changes locally and/or in a dev environment
 - [ ] I have written/updated new unit tests for the core changes or new/updated tests not necessary
+- [ ] I have posted test results from local tests or made sure the TravisCI tests succeeded
 
 ## Changes
 > _Briefly identify changes made in this PR_
@@ -22,7 +21,7 @@ Test results may be run by the TravisCI build. If so, please verify whether they
 <!-- END TEST RESULTS -->
 
 ## Dependencies
-> _Is anything changing with respect to dependencies such as? (i.e. `go.mod`) Explain that here and why they were changed._
+> _Is anything changing with respect to dependencies such as (i.e. `setup.py` and `requirements.txt` for travis). Explain that here and why they were changed._
 <!-- BEGIN DEPENDENCIES -->
 
 <!-- END DEPENDENCIES -->
