@@ -1,4 +1,6 @@
 import logging
+import os
+import test.integration.self_signed_cert as self_signed_cert
 import time
 import unittest
 
@@ -309,6 +311,10 @@ class KeyProtectTestCase(unittest.TestCase):
         resp = self.kp.get_key(key_id_or_alias=key_id)
         self.assertEqual(resp["keyRingID"], "testKeyRingIdPython")
 
+    @unittest.skipUnless(
+        os.environ.get("RUN_PURGE_TESTS") == "true",
+        "Skipping purge tests due to lacking permissions",
+    )
     def test_purge_key_fail_too_early(self):
         # create a key to be used for test
         key = self.kp.create(name="test-key", root=True)
@@ -319,6 +325,10 @@ class KeyProtectTestCase(unittest.TestCase):
             self.kp.purge_key(key_id=key_id)
         self.assertIn("REQ_TOO_EARLY_ERR", str(cm.exception))
 
+    @unittest.skipUnless(
+        os.environ.get("RUN_PURGE_TESTS") == "true",
+        "Skipping purge tests due to lacking permissions",
+    )
     def test_purge_key_fail_invalid_state(self):
         # create a key to be used for test
         key = self.kp.create(name="test-key", root=True)
@@ -338,6 +348,47 @@ class KeyProtectTestCase(unittest.TestCase):
         with self.assertRaises(redstone.client.KeyProtect.KeyProtectError) as cm:
             self.kp.sync_associated_resources(key_id=key_id)
         self.assertIn("REQ_TOO_EARLY_ERR", str(cm.exception))
+
+    def test_kmip_happy_path(self):
+        # create a key to be used for test
+        key = self.kp.create(name="py-sdk-test-key", root=True)
+        key_id = key.get("id")
+
+        adapter_created = self.kp.kmip_adapter_create(
+            "native_1.0",
+            profile_data={
+                "crk_id": key_id,
+            },
+            name="myadapter",
+            description="my description",
+        )
+        adapter_id = adapter_created.get("id")
+        self.addCleanup(self.kp.kmip_adapter_delete, adapter_id)
+
+        self.assertEqual(adapter_created["profile"], "native_1.0")
+
+        adapter_getted = self.kp.kmip_adapter_get("myadapter")
+        self.assertEqual(adapter_id, adapter_getted["id"])
+        self.assertDictEqual(adapter_created, adapter_getted)
+
+        adapters_list = self.kp.kmip_adapter_list(
+            filters={"crk_id": key_id},
+        )
+        self.assertEqual(1, len(adapters_list.get("resources")))
+        # print("mdtest-adapterid:", adapter_id)
+        cert_created = self.kp.kmip_cert_create(
+            adapter_id,
+            # adapter_created.get("name"),
+            self_signed_cert.generate_selfsigned_cert("www.kms.test.cloud.ibm.com"),
+            "mycert",
+        )
+        cert_getted = self.kp.kmip_cert_get("myadapter", "mycert")
+        self.assertDictEqual(cert_created, cert_getted)
+
+        certs_list = self.kp.kmip_cert_list(adapter_id)
+        self.assertEqual(1, len(certs_list.get("resources")))
+
+        self.kp.kmip_cert_delete(adapter_id, cert_created.get("id"))
 
 
 if __name__ == "__main__":

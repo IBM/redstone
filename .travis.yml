@@ -3,13 +3,20 @@ language: python
 
 matrix:
   include:
-    - python: 3.6
+    - python: 3.9
       env: TOXENV=flake8
-    - python: 3.6
+    - python: 3.9
       env: TOXENV=black
+      
 
 install:
-  - "pip install tox"
+  - pip install tox
+  - pip uninstall urllib3
+  - pip install -r requirements.txt
 
 script:
   - tox
+  - python -m unittest test.unit.redstone.test_auth
+  - python -m unittest test.integration.test_resourcecontroller
+  - python -m unittest test.integration.test_keyprotect
+
