@@ -343,9 +343,10 @@ class ResourceController(BaseClient):
     """
 
     names = ["rc"]
-    KEYPROTECT_PLAN_ID = (
-        "eedd3585-90c6-4c8f-be3d-062069e99fc3"  # keyprotect tiered-pricing ID
-    )
+    KEYPROTECT_PLAN_IDS = {
+        "tiered-pricing": "eedd3585-90c6-4c8f-be3d-062069e99fc3",
+        "cross-resiliency": "",
+    }
 
     def __init__(self, *args, **kwargs):
         super(ResourceController, self).__init__(*args, **kwargs)
@@ -363,7 +364,7 @@ class ResourceController(BaseClient):
         )
 
     def endpoint_for_region(self, region):
-        return "https://resource-controller.cloud.ibm.com"
+        return "https://resource-controller.test.cloud.ibm.com"
 
     def get_default_resource_group(self):
         default_rg = next(
@@ -401,7 +402,7 @@ class ResourceController(BaseClient):
 
         return resp.json()
 
-    def create_instance(self, name, plan_id, region=None, resource_group=None):
+    def create_instance(self, name:str, plan_id:str, region=None, resource_group=None):
         """
         Create/provision a service instance.
 
@@ -549,8 +550,8 @@ class KeyProtect(BaseClient):
 
         self.session.headers["Bluemix-Instance"] = self.service_instance_id
 
-    def endpoint_for_region(self, region):
-        return "https://{0}.kms.cloud.ibm.com".format(region)
+    def endpoint_for_region(self, region, private : bool = True):
+        return "https://qa.us-south.kms.test.cloud.ibm.com"
 
     def _validate_resp(self, resp):
         def log_resp(resp):

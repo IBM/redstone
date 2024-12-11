@@ -13,7 +13,7 @@ class KeyProtectTestCase(unittest.TestCase):
         cls.rc = redstone.service("ResourceController")
         cls.instance_id, cls.crn = cls.rc.create_instance(
             name="redstone-keyprotect-integration-tests",
-            plan_id=cls.rc.KEYPROTECT_PLAN_ID,
+            plan_id=cls.rc.KEYPROTECT_PLAN_IDS["tiered-pricing"],
             region="us-south",
         )
 

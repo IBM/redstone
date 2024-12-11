@@ -26,7 +26,7 @@ class ResourceControllerTestCase(unittest.TestCase):
 
         inst_id, crn = rc.create_instance(
             name=TEST_INSTANCE_NAME_PREFIX,
-            plan_id=rc.KEYPROTECT_PLAN_ID,
+            plan_id=rc.KEYPROTECT_PLAN_IDS["tiered-pricing"],
             region="us-south",
         )
 
@@ -39,7 +39,7 @@ class ResourceControllerTestCase(unittest.TestCase):
 
         inst_id, crn = rc.create_instance(
             name=TEST_INSTANCE_NAME_PREFIX,
-            plan_id=rc.KEYPROTECT_PLAN_ID,
+            plan_id=rc.KEYPROTECT_PLAN_IDS["tiered-pricing"],
             region="us-south",
         )
 

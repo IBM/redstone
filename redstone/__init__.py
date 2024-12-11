@@ -73,7 +73,7 @@ class Session(object):
     def __init__(self, region=None, iam_api_key=None):
         self.region = region
         self.iam_api_key = iam_api_key
-        self.credentials = auth.TokenManager(self.iam_api_key)
+        self.credentials = auth.TokenManager(self.iam_api_key, iam_endpoint="https://iam.test.cloud.ibm.com/")
 
     def service(self, service_name, **kwargs):
         client_cls = getattr(client, service_name, None)
