@@ -345,8 +345,9 @@ class ResourceController(BaseClient):
     names = ["rc"]
     KEYPROTECT_PLAN_IDS = {
         "tiered-pricing": "eedd3585-90c6-4c8f-be3d-062069e99fc3",
-        "cross-resiliency": "",
+        "cross-region-resiliency": "4e853ad3-5820-49c7-8d07-a179fb15b9ee",
     }
+    KEYPROTECT_PLAN_ID = (KEYPROTECT_PLAN_IDS["tiered-pricing"])
 
     def __init__(self, *args, **kwargs):
         super(ResourceController, self).__init__(*args, **kwargs)
