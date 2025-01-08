@@ -7,6 +7,7 @@
 - [ ] My code/changes are commented (especially hard-to-understand areas)
 - [ ] I have written/updated new unit tests for the core changes or new/updated tests not necessary
 - [ ] I have posted test results from local tests or made sure the TravisCI tests succeeded
+- [ ] I have made sure that the version number in setup.py is updated. (Delete this checkbox if TravisCI has been set up to automatically bump the versions)
 
 ## Changes
 > _Briefly identify changes made in this PR_

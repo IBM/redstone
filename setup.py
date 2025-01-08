@@ -19,7 +19,7 @@ with open("README.md", "r", encoding="utf8") as fh:
 
 setup(
     name="redstone",
-    version="0.6.0",
+    version="0.6.1",
     author="Mathew Odden",
     author_email="mathewrodden@gmail.com",
     url="https://github.com/IBM/redstone",
