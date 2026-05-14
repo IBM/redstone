@@ -58,9 +58,6 @@ jobs:
       - name: Build & Test
         run: |
           make ci
-          python -m unittest test.unit.redstone.test_auth
-          python -m unittest test.integration.test_resourcecontroller
-          python -m unittest test.integration.test_keyprotect
 
   results:
     if: ${{ always() }}

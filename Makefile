@@ -21,3 +21,8 @@ ci: setup lint
 lint:
 	./pylint.sh
 
+# This needs a valid API KEY to run the test
+test:
+	python -m unittest test.unit.redstone.test_auth
+	python -m unittest test.integration.test_resourcecontroller
+	python -m unittest test.integration.test_keyprotect
