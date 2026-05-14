@@ -1,25 +1,23 @@
-.PHONY: dist test doctest publish
-
-test:
-	python3 -m unittest discover -v test.unit.redstone
-
-doctest:
-	python3 -m doctest -o ELLIPSIS README.md
+.PHONY: dist
 
 dist:
 	python setup.py sdist bdist_wheel
 
 publish: dist
 	pip install 'twine>=1.5.0'
-	twine upload --repository redstone --skip-existing dist/*
+	twine upload dist/*
 	rm -fr build dist .egg *.egg-info
 
-fmt: black
+setup: deps dev_deps
 
-lint: mypy
+deps:
+	python -m pip install -r requirements.txt
 
-black:
-	black -t py35 redstone test
+dev_deps:
+	python -m pip install -r requirements-dev.txt
 
-mypy:
-	mypy redstone
+ci: setup lint
+
+lint:
+	./pylint.sh
+
