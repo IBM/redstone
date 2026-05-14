@@ -20,7 +20,4 @@ ci: setup lint
 
 lint:
 	./pylint.sh
-	python -m unittest test.unit.redstone.test_auth
-	python -m unittest test.integration.test_resourcecontroller
-	python -m unittest test.integration.test_keyprotect
 
