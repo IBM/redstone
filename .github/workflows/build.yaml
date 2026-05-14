@@ -56,8 +56,12 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Build & Test
+        env:
+            # should come from cloud.ibm.com 
+            IBMCLOUD_API_KEY: ${{ secrets.IBMCLOUD_API_KEY }}
         run: |
           make ci
+          make test
 
   results:
     if: ${{ always() }}

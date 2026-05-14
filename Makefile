@@ -20,7 +20,6 @@ ci: setup lint
 
 lint:
 	./pylint.sh
-
 # This needs a valid IBMCLOUD_API_KEY in cloud.ibm.com to run the test
 test:
 	python -m unittest test.unit.redstone.test_auth
