@@ -1,4 +1,5 @@
-# Utility file to generate a certificate for the purposes of testing the KMIP mgmt apis
+""" Utility file to generate a certificate for the purposes of testing the KMIP mgmt apis
+"""
 
 from datetime import datetime, timedelta
 

@@ -1,3 +1,6 @@
+"""
+Resource Controller tests
+"""
 import logging
 import unittest
 
@@ -6,8 +9,8 @@ import redstone
 
 TEST_INSTANCE_NAME_PREFIX = "my-test-instance"
 
-
 class ResourceControllerTestCase(unittest.TestCase):
+    """Test Cases for RC Tests"""
     def tearDown(self):
         self.cleanup_instances()
 
@@ -24,7 +27,7 @@ class ResourceControllerTestCase(unittest.TestCase):
     def test_delete_with_crn(self):
         rc = redstone.service("ResourceController")
 
-        inst_id, crn = rc.create_instance(
+        _, crn = rc.create_instance(
             name=TEST_INSTANCE_NAME_PREFIX,
             plan_id=rc.KEYPROTECT_PLAN_ID,
             region="us-south",
