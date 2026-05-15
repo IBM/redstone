@@ -1,10 +1,11 @@
+"""Module for Auth Tests"""
 import unittest
 from unittest.mock import patch
 
 from redstone import auth
 
-
 class TokenManagerTestCase(unittest.TestCase):
+    """Test Cases for Auth"""
     def test_gettoken_expired_norefreshtoken(self):
         """
         When get_token is called, the current token is expired,

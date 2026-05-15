@@ -1,3 +1,5 @@
+""" Module for integration tests for the Key Protect service
+"""
 import logging
 import os
 import test.integration.self_signed_cert as self_signed_cert
@@ -8,6 +10,7 @@ import redstone
 
 
 class KeyProtectTestCase(unittest.TestCase):
+    """Integration test cases for the Key Protect service"""
     @classmethod
     def setUpClass(cls):
         cls.rc = redstone.service("ResourceController")
