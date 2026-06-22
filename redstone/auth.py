@@ -162,7 +162,7 @@ def auth(
     if iam_endpoint[-1] == "/":
         iam_endpoint = iam_endpoint[:-1]
 
-    api_endpoint = iam_endpoint + "/oidc/token"
+    api_endpoint = iam_endpoint + "/identity/token"
 
     # HTTP Headers
     headers = {"Authorization": "Basic Yng6Yng=", "Accept": "application/json"}
